@@ -105,6 +105,12 @@ tr.g-selected td.g-cell{background:#eff6ff !important;}
 /* Phase badge in gantt row */
 .phase-sm{font-size:9px;padding:1px 5px;border-radius:8px;color:#fff;font-weight:700;flex-shrink:0;max-width:56px;overflow:hidden;text-overflow:ellipsis;}
 
+/* Color palette for phase manager */
+.cp-wrap{display:flex;flex-wrap:wrap;gap:4px;}
+.cp-swatch{width:22px;height:22px;border-radius:5px;cursor:pointer;border:2px solid transparent;flex-shrink:0;-webkit-appearance:none;padding:0;}
+.cp-swatch:hover{opacity:.85;}
+.cp-swatch.selected{border-color:#1a1a1a;box-shadow:0 0 0 1px #1a1a1a;}
+
 /* Child task indent */
 .g-child .g-li{padding-left:18px;}
 
@@ -387,8 +393,8 @@ tr.g-selected td.g-cell{background:#eff6ff !important;}
     <div class="mtitle">🎯 フェーズ管理</div>
     <p style="font-size:11px;color:var(--mut);margin-bottom:11px">Phase1・Phase2 など、任意のフェーズを作成できます。タスクに設定してガントやフィルターで活用できます。</p>
     <div id="phase-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:11px"></div>
+    <div id="new-phase-palette" class="cp-wrap" style="margin-bottom:6px"></div>
     <div style="display:flex;gap:6px;align-items:center">
-      <input type="color" id="new-phase-color" class="cswat" value="#7c3aed" style="width:28px;height:28px;">
       <input type="text" id="new-phase" class="finput" placeholder="新しいフェーズ名（例: Phase1）..." style="flex:1">
       <button class="btn btn-primary btn-sm" onclick="addPhase()">追加</button>
     </div>
@@ -815,7 +821,7 @@ function renderGantt(list,cid){
     return 0;
   });
 
-  var CW=22,LW=240;
+  var CW=22,LW=280;
   var tdStr=today();
   var startMs=new Date(tdStr).getTime();
   var maxMs=startMs+60*86400000;
@@ -887,7 +893,7 @@ function renderGantt(list,cid){
       +'<label class="g-chk-wrap" onclick="event.stopPropagation()"><input type="checkbox" class="g-chk"'+(isSelected?' checked':'')+' onchange="toggleTaskSelect('+t.id+',this.checked)"></label>'
       +priBadge+phaseBadge
       +'<span class="sdot" style="background:'+esc(st.color)+'"></span>'
-      +'<span class="g-li-title" style="'+titleStyle+'" onclick="openTaskModal('+t.id+',false)">'+esc(t.title)+'</span>'
+      +'<span class="g-li-title" style="'+titleStyle+'" title="'+esc(t.title)+'" onclick="openTaskModal('+t.id+',false)">'+esc(t.title)+'</span>'
       +'<button class="g-st-btn" onclick="openStPopup(event,'+t.id+')" title="ステータス変更">'+esc(t.status)+'</button>'
       +'<button class="delbtn" onclick="delTask(event,'+t.id+')" title="削除">✕</button>'
       +'</div></td>';
@@ -1162,25 +1168,38 @@ function addTag(){var n=document.getElementById('new-tag').value.trim();if(!n){a
 function removeTag(i){var n=masterTags[i],used=0;for(var j=0;j<tasks.length;j++){var tgs=tasks[j].tags||[];for(var k=0;k<tgs.length;k++) if(tgs[k]===n){used++;break;}}if(used>0&&!confirm('"'+n+'" は'+used+'件で使用中。削除しますか？')) return;masterTags.splice(i,1);for(var j=0;j<tasks.length;j++){var nt=[];for(var k=0;k<(tasks[j].tags||[]).length;k++) if(tasks[j].tags[k]!==n) nt.push(tasks[j].tags[k]);tasks[j].tags=nt;}saveData();saveTags();renderTagList();render();}
 
 // ── Phase Manager ──────────────────────────────────────────────────────────────
-function openPhaseMgr(){renderPhaseList();document.getElementById('new-phase').value='';document.getElementById('new-phase-color').value='#7c3aed';openOv('ov-phases');}
+var PHASE_COLORS=['#7c3aed','#2563eb','#0891b2','#0d9488','#16a34a','#84cc16','#d97706','#ea580c','#dc2626','#db2777','#9333ea','#475569'];
+var newPhaseColor='#7c3aed';
+function openPhaseMgr(){renderPhaseList();document.getElementById('new-phase').value='';newPhaseColor='#7c3aed';renderNewPhasePalette();openOv('ov-phases');}
+function renderNewPhasePalette(){
+  var h='';
+  for(var i=0;i<PHASE_COLORS.length;i++){var c=PHASE_COLORS[i];h+='<button type="button" class="cp-swatch'+(c===newPhaseColor?' selected':'')+'" style="background:'+c+'" data-c="'+c+'" onclick="selectNewPhaseColor(\''+c+'\')"></button>';}
+  document.getElementById('new-phase-palette').innerHTML=h;
+}
+function selectNewPhaseColor(c){newPhaseColor=c;renderNewPhasePalette();}
 function renderPhaseList(){
   var h='';
   for(var i=0;i<phases.length;i++){
     var p=phases[i];
-    h+='<div class="st-row">'
-      +'<input type="color" class="cswat" value="'+esc(p.color)+'" onchange="phases['+i+'].color=this.value;savePhases();render()">'
+    var sw='';
+    for(var j=0;j<PHASE_COLORS.length;j++){var c=PHASE_COLORS[j];sw+='<button type="button" class="cp-swatch'+(c===p.color?' selected':'')+'" style="background:'+c+'" onclick="setPhaseColor('+i+',\''+c+'\')"></button>';}
+    h+='<div class="st-row" style="flex-direction:column;align-items:stretch;gap:5px">'
+      +'<div style="display:flex;align-items:center;gap:7px">'
+      +'<span style="width:14px;height:14px;border-radius:4px;background:'+esc(p.color)+';flex-shrink:0;display:inline-block"></span>'
       +'<span style="flex:1;font-size:13px">'+esc(p.name)+'</span>'
       +'<button class="ibtn del" onclick="removePhase('+i+')">✕</button>'
+      +'</div>'
+      +'<div class="cp-wrap" style="padding-left:21px">'+sw+'</div>'
       +'</div>';
   }
   document.getElementById('phase-list').innerHTML=h||'<div style="font-size:12px;color:var(--mut)">フェーズがありません</div>';
 }
+function setPhaseColor(idx,c){phases[idx].color=c;savePhases();render();renderPhaseList();}
 function addPhase(){
   var n=document.getElementById('new-phase').value.trim();
   if(!n){alert('フェーズ名を入力してください');return;}
   for(var i=0;i<phases.length;i++) if(phases[i].name===n){alert('同じフェーズ名がすでにあります');return;}
-  var c=document.getElementById('new-phase-color').value;
-  phases.push({id:'ph'+Date.now(),name:n,color:c});
+  phases.push({id:'ph'+Date.now(),name:n,color:newPhaseColor});
   savePhases();renderPhaseList();render();
   document.getElementById('new-phase').value='';
 }
