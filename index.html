@@ -843,7 +843,7 @@ function renderGantt(list,cid){
     var t=sorted[i];
     if(t.parentId) continue;
     var tgs=t.tags||[]; var useTags=[];
-    for(var j=0;j<tgs.length;j++) if(tgs[j]!==SOLO_TAG) useTags.push(tgs[j]);
+    for(var j=0;j<tgs.length;j++) useTags.push(tgs[j]);
     if(!useTags.length) useTags=['(タグなし)'];
     for(var j=0;j<useTags.length;j++){
       var tag=useTags[j];
@@ -859,7 +859,7 @@ function renderGantt(list,cid){
     for(var j=0;j<sorted.length;j++) if(sorted[j].id===t.parentId){parentInList=true;break;}
     if(!parentInList){
       var tgs=t.tags||[];var useTags=[];
-      for(var j=0;j<tgs.length;j++) if(tgs[j]!==SOLO_TAG) useTags.push(tgs[j]);
+      for(var j=0;j<tgs.length;j++) useTags.push(tgs[j]);
       if(!useTags.length) useTags=['(タグなし)'];
       for(var j=0;j<useTags.length;j++){
         var tag=useTags[j];
@@ -1155,7 +1155,7 @@ function saveStatuses(){
 // ── Tag Manager ────────────────────────────────────────────────────────────────
 function openTagMgr(){renderTagList();document.getElementById('new-tag').value='';openOv('ov-tags');}
 function renderTagList(){
-  var h='';for(var i=0;i<masterTags.length;i++){var tag=masterTags[i];h+='<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--bg);border:1px solid var(--bor);border-radius:var(--rs)"><span style="flex:1;font-size:13px">'+esc(tag)+(tag===SOLO_TAG?' <span style="font-size:10px;color:var(--mut)">(予約)</span>':'')+'</span>'+(tag!==SOLO_TAG?'<button class="ibtn del" onclick="removeTag('+i+')">✕</button>':'')+'</div>';}
+  var h='';for(var i=0;i<masterTags.length;i++){var tag=masterTags[i];h+='<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--bg);border:1px solid var(--bor);border-radius:var(--rs)"><span style="flex:1;font-size:13px">'+esc(tag)+'</span><button class="ibtn del" onclick="removeTag('+i+')">✕</button></div>';}
   document.getElementById('tag-list').innerHTML=h;
 }
 function addTag(){var n=document.getElementById('new-tag').value.trim();if(!n){alert('タグ名を入力');return;}if(masterTags.indexOf(n)>-1){alert('同じタグがすでにあります');return;}masterTags.push(n);saveTags();renderTagList();if(document.getElementById('ov-task').classList.contains('open')){var sel=getCheckedTags();renderTagChecks(sel);}}
