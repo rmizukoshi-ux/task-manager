@@ -92,6 +92,9 @@ tr.g-selected td.g-cell{background:#eff6ff !important;}
 .g-cell.td{background:#fafafa;border-left-color:#ccc;}
 .g-cell.we{background:#f8f8f8;}
 .g-cell.wr{background:var(--warn-bg);}
+tr.g-done td.g-ltd{background:#f5f5f5;}
+tr.g-done td.g-cell{background:#f5f5f5 !important;border-left-color:#e8e8e8;}
+tr.g-done .g-li{opacity:.65;}
 .tday{position:absolute;top:0;bottom:0;width:2px;background:#1a1a1a;opacity:.4;z-index:4;pointer-events:none;}
 .g-bar{position:absolute;top:9px;height:16px;border-radius:3px;cursor:pointer;z-index:3;box-shadow:0 1px 2px rgba(0,0,0,.15);}
 .empty-gantt{padding:8px 0;font-size:12px;color:var(--mut);}
@@ -853,6 +856,7 @@ function renderGantt(list,cid){
     var rowCls=[];
     if(isChild) rowCls.push('g-child');
     if(isSelected) rowCls.push('g-selected');
+    if(isD) rowCls.push('g-done');
     var labelCell='<td class="g-ltd'+(isW?' wr':'')+'">'
       +'<div class="g-li" style="'+childStyle+'">'
       +'<label class="g-chk-wrap" onclick="event.stopPropagation()"><input type="checkbox" class="g-chk"'+(isSelected?' checked':'')+' onchange="toggleTaskSelect('+t.id+',this.checked)"></label>'
