@@ -238,7 +238,7 @@ tr.g-done .g-li{opacity:.55;}
     <div id="sync-status" style="font-size:11px;color:var(--mut);white-space:nowrap;display:flex;align-items:center;"></div>
     <button class="btn btn-ghost btn-sm" onclick="openFbModal()">Firebase</button>
     <button class="btn btn-ghost btn-sm" onclick="openStatusMgr()">ステータス</button>
-    <button class="btn btn-ghost btn-sm" onclick="openTagMgr()">タグ管理</button>
+    <button class="btn btn-ghost btn-sm" onclick="openTagMgr()">タグ</button>
     <button class="btn btn-ghost btn-sm" onclick="openPhaseMgr()">フェーズ</button>
     <button class="btn btn-ghost btn-sm" onclick="openBulk()">まとめて追加</button>
     <button class="btn btn-ghost btn-sm" onclick="showReport(true)">今日のタスク</button>
@@ -279,7 +279,7 @@ tr.g-done .g-li{opacity:.55;}
   <div class="modal">
     <div class="mtitle" id="tm-title">タスク追加</div>
     <div class="fg">
-      <label class="flabel" style="display:flex;justify-content:space-between">タグ <button type="button" style="font-size:10px;color:var(--mut);background:none;border:none;cursor:pointer;font-family:inherit;-webkit-appearance:none" onclick="openTagMgr()">タグ管理</button></label>
+      <label class="flabel" style="display:flex;justify-content:space-between">タグ <button type="button" style="font-size:10px;color:var(--mut);background:none;border:none;cursor:pointer;font-family:inherit;-webkit-appearance:none" onclick="openTagMgr()">タグ</button></label>
       <div class="tag-tabs" id="tag-checks"></div>
     </div>
     <div class="fg">
@@ -1345,7 +1345,7 @@ function showReport(force){
   var items=[];
   for(var i=0;i<tasks.length;i++){
     var t=tasks[i];var st=getStatus(t.status);if(!st||st.isDone) continue;
-    var dd=t.due?daysUntil(t.due):null;if(dd!==null&&dd>0) continue;
+    var dd=t.due?daysUntil(t.due):null;if(dd===null||dd>0) continue;
     items.push({title:t.title,status:t.status,overdue:dd!==null&&dd<0,color:st.color});
   }
   var html='<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mut);margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid var(--bor)">今日・期限超過のタスク</div>';
@@ -1359,7 +1359,7 @@ function copyReport(){
   var d=new Date(),wdays=['日','月','火','水','木','金','土'];
   var txt='【今日やること】'+d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日（'+wdays[d.getDay()]+'）\n\n';
   var items=[];
-  for(var i=0;i<tasks.length;i++){var t=tasks[i];var st=getStatus(t.status);if(!st||st.isDone) continue;if(t.due&&daysUntil(t.due)>0) continue;items.push(t);}
+  for(var i=0;i<tasks.length;i++){var t=tasks[i];var st=getStatus(t.status);if(!st||st.isDone) continue;if(!t.due||daysUntil(t.due)>0) continue;items.push(t);}
   if(!items.length) txt+='　なし\n';
   else for(var i=0;i<items.length;i++) txt+='・'+items[i].title+'（'+items[i].status+'）\n';
   try{navigator.clipboard.writeText(txt).then(function(){var b=document.querySelector('#ov-report .mfooter .btn-ghost');if(b){b.textContent='✓ コピー済み';setTimeout(function(){b.textContent='コピー';},2000);}});}
