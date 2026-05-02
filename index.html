@@ -56,15 +56,11 @@ header{padding:11px 18px;border-bottom:1px solid #1e2535;display:flex;align-item
 
 /* Content */
 .content{flex:1;padding:16px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
-.stats{display:flex;gap:8px;flex-wrap:wrap;}
-.stat{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:10px 15px;flex:1;min-width:70px;box-shadow:var(--sh);}
-.stat-n{font-size:20px;font-weight:700;letter-spacing:-.02em;}
-.stat-l{font-size:10px;color:var(--mut);margin-top:2px;font-weight:500;letter-spacing:.04em;}
-.toolbar{display:flex;gap:7px;align-items:center;}
-.swrap{position:relative;flex:1;}
-.swrap input{width:100%;padding:8px 11px 8px 30px;background:var(--sur);border:1px solid var(--bor);border-radius:var(--rs);color:var(--txt);font-size:13px;font-family:inherit;outline:none;-webkit-appearance:none;box-shadow:var(--sh);transition:border .15s,box-shadow .15s;}
-.swrap input:focus{border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.15);}
-.sico{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--mut);font-size:12px;}
+.swrap{position:relative;}
+.swrap input{padding:6px 11px 6px 28px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:var(--rs);color:#f9fafb;font-size:12px;font-family:inherit;outline:none;-webkit-appearance:none;width:200px;transition:background .15s,border .15s,width .2s;}
+.swrap input::placeholder{color:rgba(255,255,255,.45);}
+.swrap input:focus{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.35);width:260px;}
+.sico{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.45);font-size:11px;}
 .sb-toggle-btn{padding:7px 10px;background:var(--sur);border:1px solid var(--bor);border-radius:var(--rs);cursor:pointer;font-size:13px;-webkit-appearance:none;box-shadow:var(--sh);}
 .sb-toggle-btn:hover{background:var(--sur2);}
 .sec-label{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -249,6 +245,10 @@ tr.g-done .g-li{opacity:.55;}
     <button class="btn btn-ghost btn-sm" onclick="openBackup()">バックアップ</button>
     <button class="btn btn-ghost btn-sm" onclick="openPwModal()">パスワード</button>
     <button class="btn btn-primary" onclick="openTaskModal(null,false)">＋ タスク追加</button>
+    <div class="swrap">
+      <span class="sico">🔍</span>
+      <input type="text" id="search" placeholder="検索..." oninput="render()">
+    </div>
   </div>
 </header>
 
@@ -270,17 +270,6 @@ tr.g-done .g-li{opacity:.55;}
   </aside>
 
   <main class="content">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <button class="sb-toggle-btn" onclick="toggleSidebar()" title="サイドバーを折りたたむ">☰</button>
-      <div class="stats" id="stats" style="flex:1"></div>
-    </div>
-    <div class="toolbar">
-      <div class="swrap">
-        <span class="sico">🔍</span>
-        <input type="text" id="search" placeholder="検索（全件対象）..." oninput="render()">
-      </div>
-    </div>
-
     <div id="g-project"></div>
   </main>
 </div>
@@ -741,10 +730,6 @@ function render(){
 
   if(curFilter.type==='all') document.getElementById('f-all').className='sitem active';
 
-  // Stats
-  var active=0,warn=0,done=0;
-  for(var i=0;i<tasks.length;i++){var st=getStatus(tasks[i].status);if(!st)continue;if(st.isDone)done++;else active++;if(st.isWarning)warn++;}
-  document.getElementById('stats').innerHTML='<div class="stat"><div class="stat-n">'+tasks.length+'</div><div class="stat-l">総タスク</div></div><div class="stat"><div class="stat-n">'+active+'</div><div class="stat-l">アクティブ</div></div><div class="stat"><div class="stat-n">'+warn+'</div><div class="stat-l">⚠ Warning</div></div><div class="stat"><div class="stat-n">'+done+'</div><div class="stat-l">✅ Done</div></div>';
 
   var kw=document.getElementById('search').value.toLowerCase();
   var filtered=[];
