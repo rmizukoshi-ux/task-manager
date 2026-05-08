@@ -1,0 +1,29 @@
+name: Daily it ses news
+
+on:
+  schedule:
+    # 平日 7:00 JST = 22:00 UTC (前日)  月〜金 JST → 日〜木 UTC
+    - cron: '0 22 * * 0-4'
+  workflow_dispatch:
+
+jobs:
+  daily-news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Daily IT SES news
+        uses: anthropic-ai/claude-code-action@v1
+        with:
+          prompt: |
+            IT・SES業界の最新ニュースを収集・まとめて報告してください。
+            1. IT業界・SES（システムエンジニアリングサービス）に関する本日のニュースを検索する
+            2. 重要なトピックを5〜10件ピックアップして要約する
+            3. 業界トレンドや注目すべき動向をハイライトする
+            4. まとめをSlackまたは適切なチャンネルに投稿する
+          allowed_tools: "WebSearch,mcp__slack__*"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
