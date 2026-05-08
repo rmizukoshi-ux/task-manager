@@ -2,12 +2,35 @@ name: Daily it ses news
 
 on:
   schedule:
-    # 平日 7:00 JST = 22:00 UTC (前日)  月〜金 JST → 日〜木 UTC
+    # 平日 7:00 JST（月〜金）
+    # JST = UTC+9 のため、7:00 JST = 前日 22:00 UTC
+    # 月〜金 JST = 日〜木 UTC (0-4)
     - cron: '0 22 * * 0-4'
   workflow_dispatch:
 
 jobs:
-  daily-news:
+  check-holiday:
+    runs-on: ubuntu-latest
+    outputs:
+      is_holiday: ${{ steps.check.outputs.is_holiday }}
+    steps:
+      - name: 日本の祝日チェック
+        id: check
+        run: |
+          JST_DATE=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://date.nager.at/api/v3/IsTodayPublicHoliday/JP?offset=9")
+          if [ "$STATUS" = "200" ]; then
+            echo "is_holiday=true" >> $GITHUB_OUTPUT
+            echo "⛔ 祝日のためスキップ: $JST_DATE"
+          else
+            echo "is_holiday=false" >> $GITHUB_OUTPUT
+            echo "✅ 営業日: $JST_DATE"
+          fi
+
+  run:
+    needs: check-holiday
+    if: needs.check-holiday.outputs.is_holiday != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -15,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Daily IT SES news
+      - name: Daily IT SES news を実行
         uses: anthropic-ai/claude-code-action@v1
         with:
           prompt: |
