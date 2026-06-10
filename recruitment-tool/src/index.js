@@ -252,10 +252,10 @@ async function scoreList(env) {
 
 async function scoreSave(request, env) {
   try {
-    const { candidate, total, grade, detail } = await request.json();
+    const { candidate, fullname, status, total, grade, detail } = await request.json();
     const id = crypto.randomUUID();
-    await env.DB.prepare('INSERT INTO score_results (id,candidate,total,grade,detail) VALUES (?,?,?,?,?)')
-      .bind(id, candidate || '不明', total, grade, JSON.stringify(detail)).run();
+    await env.DB.prepare('INSERT INTO score_results (id,candidate,fullname,status,total,grade,detail) VALUES (?,?,?,?,?,?,?)')
+      .bind(id, candidate || '不明', fullname || '', status || '', total, grade, JSON.stringify(detail)).run();
     return new Response(JSON.stringify({ ok: true }), { headers: J });
   } catch (e) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
@@ -562,9 +562,31 @@ textarea{resize:vertical;min-height:120px;}
 <div class="wrap">
   <div class="card">
     <div class="card-title"><span class="badge badge-indigo">スコアリング</span> 候補者評価（手動入力）</div>
-    <div style="margin-bottom:14px;">
-      <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">候補者名（イニシャル等）</label>
-      <input id="score-candidate" placeholder="例: A.Y" style="width:200px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">候補者名（イニシャル等）</label>
+        <input id="score-candidate" placeholder="例: A.Y" style="width:140px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">フルネーム</label>
+        <input id="score-fullname" placeholder="例: 山田 太郎" style="width:180px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">選考ステータス</label>
+        <select id="score-status" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;background:#fff;">
+          <option value="">-- 選択 --</option>
+          <option>一次面接調整中</option>
+          <option>一次面接設置済み</option>
+          <option>二次面接調整中</option>
+          <option>オファー面談調整中</option>
+          <option>営業中</option>
+          <option>入社</option>
+          <option>辞退（面接前）</option>
+          <option>辞退（面接後）</option>
+          <option>お見送り（面接前）</option>
+          <option>お見送り（面接後）</option>
+        </select>
+      </div>
     </div>
     <div class="score-grid" id="score-grid"></div>
     <div class="score-result D" id="score-result" style="margin-top:16px;">
@@ -866,11 +888,22 @@ function resetScore() {
   scoreValues = {};
   buildScoreGrid();
   document.getElementById('score-candidate').value = '';
+  document.getElementById('score-fullname').value = '';
+  document.getElementById('score-status').value = '';
 }
+
+var STATUS_COLORS = {
+  '一次面接調整中':'#6366f1','一次面接設置済み':'#2563eb','二次面接調整中':'#0891b2',
+  'オファー面談調整中':'#7c3aed','営業中':'#374151','入社':'#16a34a',
+  '辞退（面接前）':'#9ca3af','辞退（面接後）':'#6b7280',
+  'お見送り（面接前）':'#dc2626','お見送り（面接後）':'#b91c1c'
+};
 
 async function saveScore() {
   var candidate = document.getElementById('score-candidate').value.trim();
-  if (!candidate) { alert('候補者名を入力してください'); return; }
+  if (!candidate) { alert('候補者名（イニシャル等）を入力してください'); return; }
+  var fullname = document.getElementById('score-fullname').value.trim();
+  var status   = document.getElementById('score-status').value;
   var total = parseInt(document.getElementById('score-total').textContent) || 0;
   var grade = document.getElementById('score-judge').textContent;
   var detail = {};
@@ -879,9 +912,11 @@ async function saveScore() {
     detail[axis.label] = sel ? sel.options[sel.selectedIndex].text : '';
   });
   try {
-    var res = await fetch('/api/scores', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ candidate:candidate, total:total, grade:grade, detail:detail }) });
+    var res = await fetch('/api/scores', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ candidate:candidate, fullname:fullname, status:status, total:total, grade:grade, detail:detail }) });
     if (!res.ok) throw new Error('保存失敗');
     document.getElementById('score-candidate').value = '';
+    document.getElementById('score-fullname').value = '';
+    document.getElementById('score-status').value = '';
     loadScoreHistory();
   } catch(e) {
     alert('保存に失敗しました: '+e.message);
@@ -901,7 +936,8 @@ async function loadScoreHistory() {
   var html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="background:#f9fafb;">'
     + '<th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e5e7eb;">日時</th>'
-    + '<th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e5e7eb;">候補者</th>'
+    + '<th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e5e7eb;">氏名</th>'
+    + '<th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e5e7eb;">選考ステータス</th>'
     + '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #e5e7eb;">スコア</th>'
     + '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #e5e7eb;">判定</th>'
     + '<th style="padding:6px 8px;border-bottom:1px solid #e5e7eb;"></th>'
@@ -909,9 +945,15 @@ async function loadScoreHistory() {
   scoreHistoryData.forEach(function(r, i) {
     var dt = r.created_at ? r.created_at.replace('T',' ').slice(0,16) : '';
     var gradeColor = {A:'#16a34a',B:'#2563eb',C:'#d97706',D:'#dc2626'}[r.grade] || '#6b7280';
+    var nameText = r.fullname ? r.fullname+' ('+r.candidate+')' : r.candidate;
+    var stColor = STATUS_COLORS[r.status] || '#6b7280';
+    var stBadge = r.status
+      ? '<span style="display:inline-block;padding:2px 7px;border-radius:10px;background:'+stColor+';color:#fff;font-size:10px;white-space:nowrap;">'+r.status+'</span>'
+      : '<span style="color:#d1d5db;font-size:11px;">-</span>';
     html += '<tr style="border-bottom:1px solid #f3f4f6;">'
-      + '<td style="padding:6px 8px;color:#6b7280;">'+dt+'</td>'
-      + '<td style="padding:6px 8px;font-weight:600;">'+r.candidate+'</td>'
+      + '<td style="padding:6px 8px;color:#6b7280;white-space:nowrap;">'+dt+'</td>'
+      + '<td style="padding:6px 8px;font-weight:600;">'+nameText+'</td>'
+      + '<td style="padding:6px 8px;">'+stBadge+'</td>'
       + '<td style="padding:6px 8px;text-align:center;">'+r.total+'/16</td>'
       + '<td style="padding:6px 8px;text-align:center;"><span style="font-weight:700;color:'+gradeColor+';">'+r.grade+'</span></td>'
       + '<td style="padding:6px 8px;"><button class="btn-sm" data-idx="'+i+'" onclick="showScoreDetail(this.dataset.idx)">詳細</button></td>'
@@ -926,7 +968,8 @@ function showScoreDetail(idx) {
   if (!r) return;
   var detail = {};
   try { detail = JSON.parse(r.detail); } catch(_) {}
-  var lines = ['【'+r.candidate+'のスコア詳細】', '合計: '+r.total+'/16点　判定: '+r.grade, ''];
+  var nameStr = r.fullname ? r.fullname+' ('+r.candidate+')' : r.candidate;
+  var lines = ['【'+nameStr+'】', '選考ステータス: '+(r.status||'未設定'), '合計: '+r.total+'/16点　判定: '+r.grade, ''];
   Object.keys(detail).forEach(function(k){ lines.push(k+': '+detail[k]); });
   alert(lines.join('\\n'));
 }
