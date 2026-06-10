@@ -552,6 +552,13 @@ textarea{resize:vertical;min-height:120px;}
       </div>
       <div class="pre-box" id="summary-text"></div>
     </div>
+    <div style="margin-top:20px;border-top:1px solid #e5e7eb;padding-top:16px;">
+      <div class="result-header" style="margin-bottom:10px;">
+        <div class="result-label">生成された面接質問</div>
+        <button class="copy-btn" onclick="copyQuestions()">選択してコピー</button>
+      </div>
+      <div id="result-questions" style="font-size:12px;color:#374151;line-height:1.7;"></div>
+    </div>
   </div>
 
 </div>
@@ -562,6 +569,10 @@ textarea{resize:vertical;min-height:120px;}
 <div class="wrap">
   <div class="card">
     <div class="card-title"><span class="badge badge-indigo">スコアリング</span> 候補者評価（手動入力）</div>
+    <div id="score-sheet-ref" style="display:none;margin-bottom:14px;padding:10px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;color:#374151;font-weight:600;">関連スキルシート</span>
+      <a id="score-sheet-url" href="#" target="_blank" style="font-size:12px;color:#2563eb;text-decoration:none;">スプレッドシートを開く →</a>
+    </div>
     <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
       <div>
         <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">候補者名（イニシャル等）</label>
@@ -978,6 +989,27 @@ function showScoreDetail(idx) {
 var qState = {}; // { qId: { checked, memo } }
 var qData  = null;
 
+function showQuestionsInResult(data) {
+  var box = document.getElementById('result-questions');
+  if (!box) return;
+  var cats = ['技術深掘り','上流工程・PM経験','AI活用','スポーツ経歴','共通'];
+  var html = '';
+  cats.forEach(function(cat) {
+    var aiQs  = (data.aiQuestions && data.aiQuestions[cat]) || [];
+    var tplQs = (data.templates   && data.templates[cat])   || [];
+    var all = aiQs.concat(tplQs.map(function(q){ return q.question; }));
+    if (!all.length) return;
+    html += '<div style="margin-bottom:12px;">'
+      + '<div style="font-size:11px;font-weight:700;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.03em;">'+cat+'</div>';
+    all.forEach(function(q, i) {
+      var badge = (i < aiQs.length) ? '<span style="font-size:9px;background:#6366f1;color:#fff;padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:middle;">AI</span>' : '';
+      html += '<div style="padding:4px 0;color:#374151;">・'+q+badge+'</div>';
+    });
+    html += '</div>';
+  });
+  box.innerHTML = html || '<p style="color:#9ca3af;">質問データがありません</p>';
+}
+
 function renderQuestions(data) {
   qData = data;
   var container = document.getElementById('q-container');
@@ -1137,11 +1169,18 @@ async function run() {
     document.getElementById('result-card').classList.add('show');
     document.getElementById('result-card').scrollIntoView({ behavior:'smooth', block:'start' });
 
-    // スコアリングページに反映（ページを移動）
+    // スコアリングページに候補者情報・シートリンクを自動反映
     buildScoreGrid();
+    document.getElementById('score-candidate').value = initial;
+    var sheetRef = document.getElementById('score-sheet-ref');
+    document.getElementById('score-sheet-url').href = d2.sheetUrl;
+    sheetRef.style.display = 'flex';
 
     // 面接質問ページに反映（AI失敗時もテンプレートを表示）
     renderQuestions(d3);
+
+    // 結果カードに面接質問プレビューを表示
+    showQuestionsInResult(d3);
 
     // 完了後にポップアップで案内
     setTimeout(function(){
