@@ -434,6 +434,10 @@ textarea{resize:vertical;min-height:120px;}
 .sheet-link:hover{background:#1f2937;}
 
 /* Scoring */
+.status-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
+.status-tab{padding:4px 11px;border-radius:20px;border:1px solid #d1d5db;background:#fff;font-size:11px;cursor:pointer;white-space:nowrap;color:#374151;font-family:inherit;transition:all .15s;}
+.status-tab:hover{border-color:#9ca3af;}
+.status-tab.active{border-color:transparent;color:#fff;font-weight:600;}
 .score-grid{display:flex;flex-direction:column;gap:12px;}
 .score-row{display:flex;align-items:center;gap:12px;}
 .score-label{flex:1;font-size:12px;font-weight:600;color:#374151;}
@@ -582,21 +586,20 @@ textarea{resize:vertical;min-height:120px;}
         <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">フルネーム</label>
         <input id="score-fullname" placeholder="例: 山田 太郎" style="width:180px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
       </div>
-      <div>
-        <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">選考ステータス</label>
-        <select id="score-status" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;background:#fff;">
-          <option value="">-- 選択 --</option>
-          <option>一次面接調整中</option>
-          <option>一次面接設置済み</option>
-          <option>二次面接調整中</option>
-          <option>オファー面談調整中</option>
-          <option>営業中</option>
-          <option>入社</option>
-          <option>辞退（面接前）</option>
-          <option>辞退（面接後）</option>
-          <option>お見送り（面接前）</option>
-          <option>お見送り（面接後）</option>
-        </select>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">選考ステータス</label>
+      <div class="status-tabs" id="status-tabs">
+        <button class="status-tab" onclick="selectStatus(this,'一次面接調整中')">一次面接調整中</button>
+        <button class="status-tab" onclick="selectStatus(this,'一次面接設置済み')">一次面接設置済み</button>
+        <button class="status-tab" onclick="selectStatus(this,'二次面接調整中')">二次面接調整中</button>
+        <button class="status-tab" onclick="selectStatus(this,'オファー面談調整中')">オファー面談調整中</button>
+        <button class="status-tab" onclick="selectStatus(this,'営業中')">営業中</button>
+        <button class="status-tab" onclick="selectStatus(this,'入社')">入社</button>
+        <button class="status-tab" onclick="selectStatus(this,'辞退（面接前）')">辞退（面接前）</button>
+        <button class="status-tab" onclick="selectStatus(this,'辞退（面接後）')">辞退（面接後）</button>
+        <button class="status-tab" onclick="selectStatus(this,'お見送り（面接前）')">お見送り（面接前）</button>
+        <button class="status-tab" onclick="selectStatus(this,'お見送り（面接後）')">お見送り（面接後）</button>
       </div>
     </div>
     <div class="score-grid" id="score-grid"></div>
@@ -900,7 +903,10 @@ function resetScore() {
   buildScoreGrid();
   document.getElementById('score-candidate').value = '';
   document.getElementById('score-fullname').value = '';
-  document.getElementById('score-status').value = '';
+  selectedStatus = '';
+  document.querySelectorAll('#status-tabs .status-tab').forEach(function(b) {
+    b.classList.remove('active'); b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
+  });
 }
 
 var STATUS_COLORS = {
@@ -910,11 +916,28 @@ var STATUS_COLORS = {
   'お見送り（面接前）':'#dc2626','お見送り（面接後）':'#b91c1c'
 };
 
+var selectedStatus = '';
+function selectStatus(btn, value) {
+  document.querySelectorAll('#status-tabs .status-tab').forEach(function(b) {
+    b.classList.remove('active');
+    b.style.background = '';
+    b.style.color = '';
+    b.style.borderColor = '';
+  });
+  if (selectedStatus === value) {
+    selectedStatus = '';
+    return;
+  }
+  selectedStatus = value;
+  btn.classList.add('active');
+  btn.style.background = STATUS_COLORS[value] || '#374151';
+}
+
 async function saveScore() {
   var candidate = document.getElementById('score-candidate').value.trim();
   if (!candidate) { alert('候補者名（イニシャル等）を入力してください'); return; }
   var fullname = document.getElementById('score-fullname').value.trim();
-  var status   = document.getElementById('score-status').value;
+  var status   = selectedStatus;
   var total = parseInt(document.getElementById('score-total').textContent) || 0;
   var grade = document.getElementById('score-judge').textContent;
   var detail = {};
@@ -927,7 +950,10 @@ async function saveScore() {
     if (!res.ok) throw new Error('保存失敗');
     document.getElementById('score-candidate').value = '';
     document.getElementById('score-fullname').value = '';
-    document.getElementById('score-status').value = '';
+    selectedStatus = '';
+    document.querySelectorAll('#status-tabs .status-tab').forEach(function(b) {
+      b.classList.remove('active'); b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
+    });
     loadScoreHistory();
   } catch(e) {
     alert('保存に失敗しました: '+e.message);
