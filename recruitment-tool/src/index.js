@@ -22,6 +22,7 @@ export default {
     // スコア蓄積
     if (p === '/api/scores' && m === 'GET')  return scoreList(env);
     if (p === '/api/scores' && m === 'POST') return scoreSave(request, env);
+    if (p.startsWith('/api/scores/') && m === 'DELETE') return scoreDelete(env, p.split('/')[3]);
 
     // テンプレートCRUD
     if (p === '/api/templates' && m === 'GET')    return tplList(env);
@@ -247,6 +248,15 @@ async function scoreList(env) {
     return new Response(JSON.stringify(rows.results || []), { headers: J });
   } catch (_) {
     return new Response('[]', { headers: J });
+  }
+}
+
+async function scoreDelete(env, id) {
+  try {
+    await env.DB.prepare('DELETE FROM score_results WHERE id = ?').bind(id).run();
+    return new Response(JSON.stringify({ ok: true }), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
   }
 }
 
@@ -993,7 +1003,10 @@ async function loadScoreHistory() {
       + '<td style="padding:6px 8px;">'+stBadge+'</td>'
       + '<td style="padding:6px 8px;text-align:center;">'+r.total+'/16</td>'
       + '<td style="padding:6px 8px;text-align:center;"><span style="font-weight:700;color:'+gradeColor+';">'+r.grade+'</span></td>'
-      + '<td style="padding:6px 8px;"><button class="btn-sm" data-idx="'+i+'" onclick="showScoreDetail(this.dataset.idx)">詳細</button></td>'
+      + '<td style="padding:6px 8px;display:flex;gap:4px;">'
+      + '<button class="btn-sm" data-idx="'+i+'" onclick="showScoreDetail(this.dataset.idx)">詳細</button>'
+      + '<button class="btn-sm btn-danger" data-idx="'+i+'" onclick="deleteScore(this.dataset.idx)">削除</button>'
+      + '</td>'
       + '</tr>';
   });
   html += '</tbody></table>';
@@ -1009,6 +1022,20 @@ function showScoreDetail(idx) {
   var lines = ['【'+nameStr+'】', '選考ステータス: '+(r.status||'未設定'), '合計: '+r.total+'/16点　判定: '+r.grade, ''];
   Object.keys(detail).forEach(function(k){ lines.push(k+': '+detail[k]); });
   alert(lines.join('\\n'));
+}
+
+async function deleteScore(idx) {
+  var r = scoreHistoryData[parseInt(idx)];
+  if (!r) return;
+  var nameStr = r.fullname || r.candidate;
+  if (!confirm(nameStr+' のスコアを削除しますか？')) return;
+  try {
+    var res = await fetch('/api/scores/'+r.id, { method:'DELETE' });
+    if (!res.ok) throw new Error('削除失敗');
+    loadScoreHistory();
+  } catch(e) {
+    alert('削除に失敗しました: '+e.message);
+  }
 }
 
 // ── 面接質問 ────────────────────────────────────────────────────────
