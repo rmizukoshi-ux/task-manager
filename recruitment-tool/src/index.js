@@ -23,6 +23,7 @@ export default {
     if (p === '/api/scores' && m === 'GET')  return scoreList(env);
     if (p === '/api/scores' && m === 'POST') return scoreSave(request, env);
     if (p.startsWith('/api/scores/') && m === 'DELETE') return scoreDelete(env, p.split('/')[3]);
+    if (p.startsWith('/api/scores/') && m === 'PUT')    return scoreUpdate(request, env, p.split('/')[3]);
 
     // テンプレートCRUD
     if (p === '/api/templates' && m === 'GET')    return tplList(env);
@@ -248,6 +249,16 @@ async function scoreList(env) {
     return new Response(JSON.stringify(rows.results || []), { headers: J });
   } catch (_) {
     return new Response('[]', { headers: J });
+  }
+}
+
+async function scoreUpdate(request, env, id) {
+  try {
+    const { status } = await request.json();
+    await env.DB.prepare('UPDATE score_results SET status = ? WHERE id = ?').bind(status, id).run();
+    return new Response(JSON.stringify({ ok: true }), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
   }
 }
 
@@ -597,21 +608,6 @@ textarea{resize:vertical;min-height:120px;}
         <input id="score-fullname" placeholder="例: 山田 太郎" style="width:180px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
       </div>
     </div>
-    <div style="margin-bottom:14px;">
-      <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">選考ステータス</label>
-      <div class="status-tabs" id="status-tabs">
-        <button class="status-tab" onclick="selectStatus(this,'一次面接調整中')">一次面接調整中</button>
-        <button class="status-tab" onclick="selectStatus(this,'一次面接設置済み')">一次面接設置済み</button>
-        <button class="status-tab" onclick="selectStatus(this,'二次面接調整中')">二次面接調整中</button>
-        <button class="status-tab" onclick="selectStatus(this,'オファー面談調整中')">オファー面談調整中</button>
-        <button class="status-tab" onclick="selectStatus(this,'営業中')">営業中</button>
-        <button class="status-tab" onclick="selectStatus(this,'入社')">入社</button>
-        <button class="status-tab" onclick="selectStatus(this,'辞退（面接前）')">辞退（面接前）</button>
-        <button class="status-tab" onclick="selectStatus(this,'辞退（面接後）')">辞退（面接後）</button>
-        <button class="status-tab" onclick="selectStatus(this,'お見送り（面接前）')">お見送り（面接前）</button>
-        <button class="status-tab" onclick="selectStatus(this,'お見送り（面接後）')">お見送り（面接後）</button>
-      </div>
-    </div>
     <div class="score-grid" id="score-grid"></div>
     <div class="score-result D" id="score-result" style="margin-top:16px;">
       <div>
@@ -913,10 +909,6 @@ function resetScore() {
   buildScoreGrid();
   document.getElementById('score-candidate').value = '';
   document.getElementById('score-fullname').value = '';
-  selectedStatus = '';
-  document.querySelectorAll('#status-tabs .status-tab').forEach(function(b) {
-    b.classList.remove('active'); b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
-  });
 }
 
 var STATUS_COLORS = {
@@ -926,28 +918,12 @@ var STATUS_COLORS = {
   'お見送り（面接前）':'#dc2626','お見送り（面接後）':'#b91c1c'
 };
 
-var selectedStatus = '';
-function selectStatus(btn, value) {
-  document.querySelectorAll('#status-tabs .status-tab').forEach(function(b) {
-    b.classList.remove('active');
-    b.style.background = '';
-    b.style.color = '';
-    b.style.borderColor = '';
-  });
-  if (selectedStatus === value) {
-    selectedStatus = '';
-    return;
-  }
-  selectedStatus = value;
-  btn.classList.add('active');
-  btn.style.background = STATUS_COLORS[value] || '#374151';
-}
 
 async function saveScore() {
   var candidate = document.getElementById('score-candidate').value.trim();
   if (!candidate) { alert('候補者名（イニシャル等）を入力してください'); return; }
   var fullname = document.getElementById('score-fullname').value.trim();
-  var status   = selectedStatus;
+  var status   = '';
   var total = parseInt(document.getElementById('score-total').textContent) || 0;
   var grade = document.getElementById('score-judge').textContent;
   var detail = {};
@@ -960,10 +936,6 @@ async function saveScore() {
     if (!res.ok) throw new Error('保存失敗');
     document.getElementById('score-candidate').value = '';
     document.getElementById('score-fullname').value = '';
-    selectedStatus = '';
-    document.querySelectorAll('#status-tabs .status-tab').forEach(function(b) {
-      b.classList.remove('active'); b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
-    });
     loadScoreHistory();
   } catch(e) {
     alert('保存に失敗しました: '+e.message);
@@ -993,14 +965,16 @@ async function loadScoreHistory() {
     var dt = r.created_at ? r.created_at.replace('T',' ').slice(0,16) : '';
     var gradeColor = {A:'#16a34a',B:'#2563eb',C:'#d97706',D:'#dc2626'}[r.grade] || '#6b7280';
     var nameText = r.fullname ? r.fullname+' ('+r.candidate+')' : r.candidate;
-    var stColor = STATUS_COLORS[r.status] || '#6b7280';
-    var stBadge = r.status
-      ? '<span style="display:inline-block;padding:2px 7px;border-radius:10px;background:'+stColor+';color:#fff;font-size:10px;white-space:nowrap;">'+r.status+'</span>'
-      : '<span style="color:#d1d5db;font-size:11px;">-</span>';
+    var stOpts = ['','一次面接調整中','一次面接設置済み','二次面接調整中','オファー面談調整中','営業中','入社','辞退（面接前）','辞退（面接後）','お見送り（面接前）','お見送り（面接後）']
+      .map(function(s){ return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+( s||'-- 未設定 --')+'</option>'; }).join('');
+    var stColor = STATUS_COLORS[r.status] || '';
+    var stStyle = 'font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid #d1d5db;cursor:pointer;font-family:inherit;'
+      + (stColor ? 'background:'+stColor+';color:#fff;border-color:transparent;font-weight:600;' : '');
+    var stSelect = '<select data-rid="'+r.id+'" onchange="updateStatus(this)" style="'+stStyle+'">'+stOpts+'</select>';
     html += '<tr style="border-bottom:1px solid #f3f4f6;">'
       + '<td style="padding:6px 8px;color:#6b7280;white-space:nowrap;">'+dt+'</td>'
       + '<td style="padding:6px 8px;font-weight:600;">'+nameText+'</td>'
-      + '<td style="padding:6px 8px;">'+stBadge+'</td>'
+      + '<td style="padding:6px 8px;">'+stSelect+'</td>'
       + '<td style="padding:6px 8px;text-align:center;">'+r.total+'/16</td>'
       + '<td style="padding:6px 8px;text-align:center;"><span style="font-weight:700;color:'+gradeColor+';">'+r.grade+'</span></td>'
       + '<td style="padding:6px 8px;display:flex;gap:4px;">'
@@ -1022,6 +996,23 @@ function showScoreDetail(idx) {
   var lines = ['【'+nameStr+'】', '選考ステータス: '+(r.status||'未設定'), '合計: '+r.total+'/16点　判定: '+r.grade, ''];
   Object.keys(detail).forEach(function(k){ lines.push(k+': '+detail[k]); });
   alert(lines.join('\\n'));
+}
+
+async function updateStatus(sel) {
+  var id = sel.dataset.rid;
+  var status = sel.value;
+  var color = STATUS_COLORS[status] || '';
+  sel.style.background = color || '#fff';
+  sel.style.color = color ? '#fff' : '';
+  sel.style.borderColor = color ? 'transparent' : '#d1d5db';
+  sel.style.fontWeight = color ? '600' : '';
+  try {
+    await fetch('/api/scores/'+id, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ status:status }) });
+    var row = scoreHistoryData.find(function(r){ return r.id === id; });
+    if (row) row.status = status;
+  } catch(e) {
+    alert('更新に失敗しました');
+  }
 }
 
 async function deleteScore(idx) {
