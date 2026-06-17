@@ -16,7 +16,7 @@ type Doc = {
 const CATEGORIES = ['すべて', '会社説明', '採用資料', '営業資料', 'その他']
 
 export function GalleryPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, authFetch } = useAuth()
   const navigate = useNavigate()
   const [docs, setDocs] = useState<Doc[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,7 +31,7 @@ export function GalleryPage() {
     params.set('sort', sort)
 
     setLoading(true)
-    fetch(`/api/documents?${params}`, { credentials: 'include' })
+    authFetch(`/api/documents?${params}`)
       .then(r => r.ok ? r.json() as Promise<Doc[]> : [])
       .then(setDocs)
       .catch(() => setDocs([]))

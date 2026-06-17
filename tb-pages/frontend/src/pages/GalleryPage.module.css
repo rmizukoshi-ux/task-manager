@@ -223,3 +223,15 @@
   color: #aaa;
   margin-top: auto;
 }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .header { padding: 0 16px; }
+  .headerRight { gap: 8px; }
+  .userName { display: none; }
+  .filterBar { padding: 10px 16px; gap: 12px; flex-direction: column; align-items: flex-start; }
+  .filterGroup { flex-wrap: wrap; }
+  .tabs { flex-wrap: wrap; }
+  .main { padding: 16px; }
+  .grid { grid-template-columns: 1fr; }
+}

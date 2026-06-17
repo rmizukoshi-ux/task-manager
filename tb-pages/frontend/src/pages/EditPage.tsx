@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+
 import styles from './UploadPage.module.css'
 
 const CATEGORIES = ['会社説明', '採用資料', '営業資料', 'その他']
@@ -16,7 +17,7 @@ type Doc = {
 export function EditPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, authFetch } = useAuth()
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0])
   const [description, setDescription] = useState('')
@@ -26,7 +27,7 @@ export function EditPage() {
 
   useEffect(() => {
     if (!id) return
-    fetch(`/api/documents/${id}`, { credentials: 'include' })
+    authFetch(`/api/documents/${id}`)
       .then(r => r.ok ? r.json() as Promise<Doc> : null)
       .then(data => {
         if (!data) { navigate('/gallery'); return }
@@ -49,10 +50,9 @@ export function EditPage() {
     setError('')
 
     try {
-      const res = await fetch(`/api/documents/${id}`, {
+      const res = await authFetch(`/api/documents/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ title: title.trim(), category, description: description.trim() }),
       })
       const data = await res.json() as { ok?: boolean; error?: string }

@@ -16,8 +16,8 @@ database_id = "886bbba5-61e3-4741-bd47-990ff75a5938"
 # - JWT_SECRET
 
 [[routes]]
-pattern = "sandbox.acial.com/view/*"
-zone_name = "acial.com"
+pattern = "sandbox.a-cial.com/view/*"
+zone_name = "a-cial.com"
 
 [dev]
 port = 8788

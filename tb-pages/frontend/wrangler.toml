@@ -3,5 +3,5 @@ pages_build_output_dir = "dist"
 compatibility_date = "2024-09-23"
 
 [[routes]]
-pattern = "tb-pages.acial.com/*"
-zone_name = "acial.com"
+pattern = "tb-pages.a-cial.com/*"
+zone_name = "a-cial.com"

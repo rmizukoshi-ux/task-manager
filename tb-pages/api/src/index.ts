@@ -21,7 +21,7 @@ const app = new Hono<{ Bindings: Env }>()
 app.use('*', cors({
   origin: (origin) => {
     if (!origin) return null
-    const allowed = ['http://localhost:5173', 'https://tb-pages.a-cial.com']
+    const allowed = ['http://localhost:5173', 'https://tb-pages.a-cial.com', 'https://pages.a-cial.com']
     return allowed.includes(origin) ? origin : null
   },
   credentials: true,

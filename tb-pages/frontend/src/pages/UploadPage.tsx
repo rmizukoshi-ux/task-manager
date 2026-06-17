@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import styles from './UploadPage.module.css'
 
 const CATEGORIES = ['会社説明', '採用資料', '営業資料', 'その他']
 
 export function UploadPage() {
   const navigate = useNavigate()
+  const { authFetch } = useAuth()
   const fileRef = useRef<HTMLInputElement>(null)
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0])
@@ -46,9 +48,8 @@ export function UploadPage() {
     formData.append('description', description.trim())
 
     try {
-      const res = await fetch('/api/documents', {
+      const res = await authFetch('/api/documents', {
         method: 'POST',
-        credentials: 'include',
         body: formData,
       })
       const data = await res.json() as { id?: string; error?: string }

@@ -18,7 +18,7 @@ type Doc = {
 export function ViewerPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, authFetch } = useAuth()
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const [doc, setDoc] = useState<Doc | null>(null)
@@ -35,8 +35,8 @@ export function ViewerPage() {
     if (!id) return
 
     Promise.all([
-      fetch(`/api/documents/${id}`, { credentials: 'include' }),
-      fetch(`/api/documents/${id}/viewer-token`, { credentials: 'include' }),
+      authFetch(`/api/documents/${id}`),
+      authFetch(`/api/documents/${id}/viewer-token`),
     ])
       .then(async ([docRes, tokenRes]) => {
         if (!docRes.ok) { setError('資料が見つかりません'); return }
@@ -55,10 +55,9 @@ export function ViewerPage() {
   const togglePublic = async () => {
     if (!doc || !id) return
     const newValue = doc.is_public ? 0 : 1
-    const res = await fetch(`/api/documents/${id}`, {
+    const res = await authFetch(`/api/documents/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ is_public: newValue }),
     })
     if (res.ok) setDoc({ ...doc, is_public: newValue })
@@ -67,7 +66,7 @@ export function ViewerPage() {
 
   const handleDelete = async () => {
     if (!id) return
-    const res = await fetch(`/api/documents/${id}`, { method: 'DELETE', credentials: 'include' })
+    const res = await authFetch(`/api/documents/${id}`, { method: 'DELETE' })
     if (res.ok) navigate('/gallery')
     setShowDeleteConfirm(false)
   }

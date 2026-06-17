@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 
 export type Role = 'ADMIN' | 'UPLOADER' | 'VIEWER'
 
@@ -14,6 +14,7 @@ interface AuthContextValue {
   loading: boolean
   logout: () => Promise<void>
   setUser: (user: User | null) => void
+  authFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -35,8 +36,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
+  // Fetch wrapper that auto-redirects to /login on 401 (session expired)
+  const authFetch = useCallback(async (input: RequestInfo, init?: RequestInit): Promise<Response> => {
+    const res = await fetch(input, { credentials: 'include', ...init })
+    if (res.status === 401) {
+      setUser(null)
+      window.location.href = '/login'
+    }
+    return res
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, loading, logout, setUser }}>
+    <AuthContext.Provider value={{ user, loading, logout, setUser, authFetch }}>
       {children}
     </AuthContext.Provider>
   )

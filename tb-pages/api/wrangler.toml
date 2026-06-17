@@ -24,8 +24,8 @@ ALLOWED_DOMAIN = "a-cial.com"
 # - UPLOADER_EMAILS    (comma-separated)
 
 [[routes]]
-pattern = "tb-pages.acial.com/api/*"
-zone_name = "acial.com"
+pattern = "tb-pages.a-cial.com/api/*"
+zone_name = "a-cial.com"
 
 [dev]
 port = 8787

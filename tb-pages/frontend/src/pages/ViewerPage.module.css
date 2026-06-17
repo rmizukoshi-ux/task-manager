@@ -163,3 +163,11 @@
   gap: 10px;
   justify-content: flex-end;
 }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .topBar { padding: 0 12px; height: auto; min-height: 52px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; gap: 8px; }
+  .actions { flex-wrap: wrap; gap: 6px; }
+  .back { font-size: 12px; }
+  .docTitle { font-size: 13px; }
+}
