@@ -153,12 +153,16 @@ ${text}
   - テスト: QA・テスト業務に従事した全プロジェクト期間の合計
   - 運用・保守: 明示されている場合のみカウント
 - devEnv: 開発環境・言語・OSを列挙。OS（iOS/Android等）はスキルシートに記載されている順番で先に列挙し、その後に言語・フレームワーク・ツールを経験年数が長い順に追加。「X年Xか月」形式
-- projects: 案件を【新しい順】に並べる
+- projects: 案件を【古い順（開始日が早い順）】に並べる
   - position: 「PM」→「プロジェクトマネージャー」、「PL」→「プロジェクトリーダー」、「SE」→「SE」、「PG」→「PG」、「PMO」→「PMO」
   - teamSize: 「1-4名」「5-10名」「11-20名」「21名以上」のいずれか
   - devEnv: カンマ区切り（例: "iOS, Android"）
   - processes: 担当工程リスト。選択肢: ["調査・管理","要件定義","基本設計","詳細設計","製造","テスト","運用・保守"]。PL/PMとして従事した案件は必ず「調査・管理」を含める
-  - content: 案件名（■【】を除く）。50文字以内
+  - content: 以下の形式で記載（300文字以内）。
+    ■案件名
+    【業務内容】
+    ・主要業務1
+    ・主要業務2（必要に応じて3行まで）
 
 出力JSON（このフォーマットのみ）:
 {
@@ -167,7 +171,7 @@ ${text}
   "positionYears":{"PM":"X年Xか月","PL":"X年Xか月","PMO":"","SE":"","PG":""},
   "processYears":{"調査・管理":"X年Xか月","要件定義":"X年Xか月","基本設計":"","詳細設計":"","製造":"","テスト":"X年Xか月","運用・保守":""},
   "devEnv":[{"name":"iOS","years":"X年Xか月"},{"name":"Android","years":"X年Xか月"}],
-  "projects":[{"position":"プロジェクトリーダー","startMonth":"2024年4月","endMonth":"2026年3月","teamSize":"11-20名","processes":["調査・管理","テスト"],"content":"某キャリア向けアプリ検証","devEnv":"iOS, Android"}],
+  "projects":[{"position":"プロジェクトリーダー","startMonth":"2009年7月","endMonth":"2013年9月","teamSize":"11-20名","processes":["調査・管理","テスト"],"content":"■某メーカ向け端末検証\n【業務内容】\n・ガラケー、スマホ端末の機能試験（設計・実施）\n・PJ進捗管理","devEnv":"Android"}],
   "skills":{"experience":"PL、QAエンジニア","devEnvSummary":"iOS、Android","tools":"MagicPod","strengths":["強み1","強み2","強み3"]}
 }`;
 
@@ -223,7 +227,7 @@ async function apiQuestions(request, env) {
 開発環境: ${data.skills?.devEnvSummary || ''}
 ポジション経験: ${JSON.stringify(data.positionYears || {})}
 工程経験: ${JSON.stringify(data.processYears || {})}
-最新案件: ${(data.projects || []).slice(0, 2).map(p => p.content).join('、')}`;
+最新案件: ${(data.projects || []).slice(-2).map(p => p.content).join('、')}`;
     const prompt = `以下の候補者プロフィールに基づき、面接で使える深掘り質問を日本語で生成してください。JSONのみ出力。説明不要。
 候補者プロフィール:
 ${profile}
