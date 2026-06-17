@@ -38,8 +38,7 @@ export default {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'Content-Security-Policy':
-          "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;",
-        'X-Frame-Options': 'SAMEORIGIN',
+          "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; frame-ancestors https://tb-pages-frontend.pages.dev https://*.tb-pages-frontend.pages.dev http://localhost:5173",
         'Cache-Control': 'no-store',
       },
     })
