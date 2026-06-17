@@ -1,0 +1,24 @@
+{
+  "name": "tb-pages",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "api",
+    "sandbox",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=api\" \"npm run dev --workspace=sandbox\" \"npm run dev --workspace=frontend\"",
+    "dev:api": "npm run dev --workspace=api",
+    "dev:sandbox": "npm run dev --workspace=sandbox",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "type-check": "npm run type-check --workspace=api && npm run type-check --workspace=sandbox && npm run type-check --workspace=frontend",
+    "db:migrate:local": "npm run db:migrate:local --workspace=api",
+    "db:migrate:remote": "npm run db:migrate:remote --workspace=api",
+    "setup": "npm install && npm run db:create --workspace=api && npm run r2:create --workspace=api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

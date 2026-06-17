@@ -1,0 +1,7 @@
+name = "tb-pages-frontend"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-09-23"
+
+[[routes]]
+pattern = "tb-pages.acial.com/*"
+zone_name = "acial.com"
