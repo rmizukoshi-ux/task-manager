@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "tb-pages-db"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "886bbba5-61e3-4741-bd47-990ff75a5938"
 
 [[r2_buckets]]
 binding = "STORAGE"
