@@ -23,9 +23,9 @@ ALLOWED_DOMAIN = "a-cial.com"
 # - ADMIN_EMAILS       (comma-separated)
 # - UPLOADER_EMAILS    (comma-separated)
 
-[[routes]]
-pattern = "tb-pages.a-cial.com/api/*"
-zone_name = "a-cial.com"
+# [[routes]]
+# pattern = "tb-pages.a-cial.com/api/*"
+# zone_name = "a-cial.com"
 
 [dev]
 port = 8787
