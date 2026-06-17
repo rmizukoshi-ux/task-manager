@@ -66,8 +66,8 @@ auth.get('/callback', async (c) => {
     aud: string
   }>()
 
-  // Security: verify audience matches our client ID
-  if (info.aud !== c.env.GOOGLE_CLIENT_ID) return c.redirect(`${frontendOrigin}/login?error=invalid_token`)
+  // Security: verify audience matches our client ID (trim to handle accidental whitespace)
+  if (info.aud !== c.env.GOOGLE_CLIENT_ID.trim()) return c.redirect(`${frontendOrigin}/login?error=invalid_token`)
 
   // Security: backend domain check — MUST NOT rely on frontend hd param alone
   if (info.hd !== c.env.ALLOWED_DOMAIN) return c.redirect(`${frontendOrigin}/login?error=domain_not_allowed`)
