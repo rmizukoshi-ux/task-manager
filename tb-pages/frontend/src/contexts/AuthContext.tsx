@@ -40,7 +40,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch wrapper that auto-redirects to /login on 401 (session expired)
   const authFetch = useCallback(async (input: RequestInfo, init?: RequestInit): Promise<Response> => {
-    const res = await fetch(input, { credentials: 'include', ...init })
+    const url = typeof input === 'string' && input.startsWith('/')
+      ? `${import.meta.env.VITE_API_BASE_URL ?? ''}${input}`
+      : input
+    const res = await fetch(url, { credentials: 'include', ...init })
     if (res.status === 401) {
       setUser(null)
       window.location.href = '/login'
