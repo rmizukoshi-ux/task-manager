@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import authRoutes from './routes/auth'
 
 export type Env = {
   DB: D1Database
@@ -9,18 +10,23 @@ export type Env = {
   JWT_SECRET: string
   ADMIN_EMAILS: string
   UPLOADER_EMAILS: string
+  ALLOWED_DOMAIN: string
   ENVIRONMENT: string
 }
 
 const app = new Hono<{ Bindings: Env }>()
 
 app.use('*', cors({
-  origin: ['https://tb-pages.acial.com', 'http://localhost:5173'],
+  origin: (origin) => {
+    if (!origin) return null
+    const allowed = ['http://localhost:5173', 'https://tb-pages.a-cial.com']
+    return allowed.includes(origin) ? origin : null
+  },
   credentials: true,
 }))
 
-app.get('/api/health', (c) => {
-  return c.json({ status: 'ok', env: c.env.ENVIRONMENT })
-})
+app.get('/api/health', (c) => c.json({ status: 'ok', env: c.env.ENVIRONMENT }))
+
+app.route('/api/auth', authRoutes)
 
 export default app
