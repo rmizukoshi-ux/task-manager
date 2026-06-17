@@ -31,10 +31,10 @@ auth.get('/google', (c) => {
 // Step 2: Google redirects back here with ?code=
 auth.get('/callback', async (c) => {
   const code = c.req.query('code')
+  const url = new URL(c.req.url)
   const frontendOrigin = c.env.FRONTEND_URL || (url.hostname === 'localhost' ? 'http://localhost:5173' : `https://tb-pages.${c.env.ALLOWED_DOMAIN}`)
   if (!code || c.req.query('error')) return c.redirect(`${frontendOrigin}/login?error=oauth_denied`)
 
-  const url = new URL(c.req.url)
   const callbackUrl = `${url.protocol}//${url.host}/api/auth/callback`
 
   // Exchange code for tokens
@@ -49,13 +49,25 @@ auth.get('/callback', async (c) => {
       grant_type: 'authorization_code',
     }),
   })
-  if (!tokenRes.ok) return c.redirect(`${frontendOrigin}/login?error=token_exchange`)
+  if (!tokenRes.ok) {
+    const errText = await tokenRes.text()
+    console.error('Token exchange failed:', tokenRes.status, errText)
+    return c.redirect(`${frontendOrigin}/login?error=token_exchange`)
+  }
 
-  const { id_token } = await tokenRes.json<{ id_token: string }>()
+  const tokenData = await tokenRes.json<{ id_token?: string; access_token?: string }>()
+  const { id_token } = tokenData
+  console.log('id_token present:', !!id_token)
+
+  if (!id_token) return c.redirect(`${frontendOrigin}/login?error=token_exchange`)
 
   // Verify via Google's tokeninfo endpoint (validates signature + expiry)
   const infoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${id_token}`)
-  if (!infoRes.ok) return c.redirect(`${frontendOrigin}/login?error=invalid_token`)
+  if (!infoRes.ok) {
+    const errText = await infoRes.text()
+    console.error('Tokeninfo failed:', infoRes.status, errText)
+    return c.redirect(`${frontendOrigin}/login?error=invalid_token`)
+  }
 
   const info = await infoRes.json<{
     email: string
@@ -66,7 +78,11 @@ auth.get('/callback', async (c) => {
     aud: string
   }>()
 
-  // Security: verify audience matches our client ID (trim to handle accidental whitespace)
+  console.log('Token aud:', info.aud)
+  console.log('Expected client_id:', c.env.GOOGLE_CLIENT_ID.trim())
+  console.log('aud matches:', info.aud === c.env.GOOGLE_CLIENT_ID.trim())
+
+  // Security: verify audience matches our client ID
   if (info.aud !== c.env.GOOGLE_CLIENT_ID.trim()) return c.redirect(`${frontendOrigin}/login?error=invalid_token`)
 
   // Security: backend domain check — MUST NOT rely on frontend hd param alone
