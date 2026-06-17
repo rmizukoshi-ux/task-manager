@@ -139,25 +139,39 @@ async function apiAnalyze(request, env) {
 ${text}
 
 【抽出ルール】
-- selfPR: 自己PRを300文字程度に要約（重要なスキル・実績・強みを残す）
+- selfPR: 自己PRセクション全体を読み込み、以下を含む300文字程度の文章（箇条書き・見出し番号不要）でまとめる。
+  ①専門領域と経験年数の具体的な数字　②チーム規模・マネジメント実績の数字　③顧客折衝・契約管理の実績　④最新技術・ツールへの取り組み。
+  「○○ファースト」等の抽象的フレーズは避け、数字・実績・技術名を優先して記述すること。
 - qualifications: 取得資格（なければ必ず空文字。"不明"や"なし"は書かない）
 - positionYears: 各ポジションの合計経験年数。経験なしは空文字。「X年Xか月」形式
-- processYears: 各工程の合計経験年数。経験なしは空文字
-- devEnv: 開発環境・言語・OSを経験年数が長い順に列挙。「X年Xか月」形式
-- projects: 案件を【新しい順】に並べる。contentは案件名のみ30〜50文字以内（詳細説明・箇条書き不要。■【】は除く）
-- position: 「PM」→「プロジェクトマネージャー」、「PL」→「プロジェクトリーダー」、「SE」→「SE」、「PG」→「PG」、「PMO」→「PMO」
-- teamSize: 「1-4名」「5-10名」「11-20名」「21名以上」のいずれか
-- devEnv（案件内）: カンマ区切り（例: "iOS, Android"）
-- processes: 担当工程リスト。選択肢: ["調査・管理","要件定義","基本設計","詳細設計","製造","テスト","運用・保守"]
+  - PM: 1次請けとして顧客との契約調整・見積作成・リソース管理など実質的なPM業務を担った合計年数。肩書がPLでも1次請けでPM相当業務を担っている場合はカウントする
+  - PL: プロジェクトリーダーとして従事した全プロジェクトの合計年数
+- processYears: 各工程の合計経験年数。経験なしは空文字。「X年Xか月」形式
+  - 調査・管理: PL/PMとして従事した全プロジェクト期間の合計（PL/PM役割には常に調査・管理が含まれるため、PL/PM在籍期間をすべてカウントする）
+  - 要件定義: 要件定義・上流工程を担当した期間の合計。顧客との仕様調整・契約調整・見積作成・ベンダコントロールなども含む
+  - 基本設計・詳細設計・製造: 明示されている場合のみカウント
+  - テスト: QA・テスト業務に従事した全プロジェクト期間の合計
+  - 運用・保守: 明示されている場合のみカウント
+- devEnv: 開発環境・言語・OSを列挙。OS（iOS/Android等）はスキルシートに記載されている順番で先に列挙し、その後に言語・フレームワーク・ツールを経験年数が長い順に追加。「X年Xか月」形式
+- projects: 案件を【古い順（開始日が早い順）】に並べる
+  - position: 「PM」→「プロジェクトマネージャー」、「PL」→「プロジェクトリーダー」、「SE」→「SE」、「PG」→「PG」、「PMO」→「PMO」
+  - teamSize: 「1-4名」「5-10名」「11-20名」「21名以上」のいずれか
+  - devEnv: カンマ区切り（例: "iOS, Android"）
+  - processes: 担当工程リスト。選択肢: ["調査・管理","要件定義","基本設計","詳細設計","製造","テスト","運用・保守"]。PL/PMとして従事した案件は必ず「調査・管理」を含める
+  - content: 以下の形式で記載（300文字以内）。
+    ■案件名
+    【業務内容】
+    ・主要業務1
+    ・主要業務2（必要に応じて3行まで）
 
 出力JSON（このフォーマットのみ）:
 {
   "selfPR":"自己PR300文字程度",
   "qualifications":"取得資格（なければ空文字）",
-  "positionYears":{"PM":"","PL":"X年Xか月","PMO":"","SE":"","PG":""},
-  "processYears":{"調査・管理":"X年Xか月","要件定義":"","基本設計":"","詳細設計":"","製造":"","テスト":"X年Xか月","運用・保守":""},
-  "devEnv":[{"name":"Android","years":"X年Xか月"}],
-  "projects":[{"position":"プロジェクトリーダー","startMonth":"2024年4月","endMonth":"2026年3月","teamSize":"11-20名","processes":["テスト"],"content":"某キャリア向けアプリ検証","devEnv":"iOS, Android"}],
+  "positionYears":{"PM":"X年Xか月","PL":"X年Xか月","PMO":"","SE":"","PG":""},
+  "processYears":{"調査・管理":"X年Xか月","要件定義":"X年Xか月","基本設計":"","詳細設計":"","製造":"","テスト":"X年Xか月","運用・保守":""},
+  "devEnv":[{"name":"iOS","years":"X年Xか月"},{"name":"Android","years":"X年Xか月"}],
+  "projects":[{"position":"プロジェクトリーダー","startMonth":"2009年7月","endMonth":"2013年9月","teamSize":"11-20名","processes":["調査・管理","テスト"],"content":"■某メーカ向け端末検証\n【業務内容】\n・ガラケー、スマホ端末の機能試験（設計・実施）\n・PJ進捗管理","devEnv":"Android"}],
   "skills":{"experience":"PL、QAエンジニア","devEnvSummary":"iOS、Android","tools":"MagicPod","strengths":["強み1","強み2","強み3"]}
 }`;
 
@@ -166,7 +180,7 @@ ${text}
         { role: 'system', content: 'JSONのみ出力。前置きや説明は不要。' },
         { role: 'user', content: prompt },
       ],
-      max_tokens: 4000,
+      max_tokens: 6000,
     });
     const raw = ai?.response || '';
     const m2 = raw.match(/\{[\s\S]*\}/);
@@ -213,7 +227,7 @@ async function apiQuestions(request, env) {
 開発環境: ${data.skills?.devEnvSummary || ''}
 ポジション経験: ${JSON.stringify(data.positionYears || {})}
 工程経験: ${JSON.stringify(data.processYears || {})}
-最新案件: ${(data.projects || []).slice(0, 2).map(p => p.content).join('、')}`;
+最新案件: ${(data.projects || []).slice(-2).map(p => p.content).join('、')}`;
     const prompt = `以下の候補者プロフィールに基づき、面接で使える深掘り質問を日本語で生成してください。JSONのみ出力。説明不要。
 候補者プロフィール:
 ${profile}
