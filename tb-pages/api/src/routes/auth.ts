@@ -7,7 +7,8 @@ import { requireAuth, type AuthVars } from '../middleware/auth'
 const auth = new Hono<{ Bindings: Env; Variables: AuthVars }>()
 
 function cookieStr(token: string, isHttps: boolean, maxAge = 28800): string {
-  const flags = ['HttpOnly', 'SameSite=Lax', 'Path=/', `Max-Age=${maxAge}`]
+  const sameSite = isHttps ? 'None' : 'Lax'
+  const flags = ['HttpOnly', `SameSite=${sameSite}`, 'Path=/', `Max-Age=${maxAge}`]
   if (isHttps) flags.push('Secure')
   return `auth_token=${token}; ${flags.join('; ')}`
 }
