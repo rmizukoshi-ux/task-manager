@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import authRoutes from './routes/auth'
+import documentRoutes from './routes/documents'
 
 export type Env = {
   DB: D1Database
@@ -28,5 +29,6 @@ app.use('*', cors({
 app.get('/api/health', (c) => c.json({ status: 'ok', env: c.env.ENVIRONMENT }))
 
 app.route('/api/auth', authRoutes)
+app.route('/api/documents', documentRoutes)
 
 export default app
