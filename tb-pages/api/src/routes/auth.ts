@@ -31,7 +31,8 @@ auth.get('/google', (c) => {
 // Step 2: Google redirects back here with ?code=
 auth.get('/callback', async (c) => {
   const code = c.req.query('code')
-  if (!code || c.req.query('error')) return c.redirect('/login?error=oauth_denied')
+  const frontendOrigin = c.env.FRONTEND_URL || (url.hostname === 'localhost' ? 'http://localhost:5173' : `https://tb-pages.${c.env.ALLOWED_DOMAIN}`)
+  if (!code || c.req.query('error')) return c.redirect(`${frontendOrigin}/login?error=oauth_denied`)
 
   const url = new URL(c.req.url)
   const callbackUrl = `${url.protocol}//${url.host}/api/auth/callback`
@@ -48,13 +49,13 @@ auth.get('/callback', async (c) => {
       grant_type: 'authorization_code',
     }),
   })
-  if (!tokenRes.ok) return c.redirect('/login?error=token_exchange')
+  if (!tokenRes.ok) return c.redirect(`${frontendOrigin}/login?error=token_exchange`)
 
   const { id_token } = await tokenRes.json<{ id_token: string }>()
 
   // Verify via Google's tokeninfo endpoint (validates signature + expiry)
   const infoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${id_token}`)
-  if (!infoRes.ok) return c.redirect('/login?error=invalid_token')
+  if (!infoRes.ok) return c.redirect(`${frontendOrigin}/login?error=invalid_token`)
 
   const info = await infoRes.json<{
     email: string
@@ -66,11 +67,11 @@ auth.get('/callback', async (c) => {
   }>()
 
   // Security: verify audience matches our client ID
-  if (info.aud !== c.env.GOOGLE_CLIENT_ID) return c.redirect('/login?error=invalid_token')
+  if (info.aud !== c.env.GOOGLE_CLIENT_ID) return c.redirect(`${frontendOrigin}/login?error=invalid_token`)
 
   // Security: backend domain check — MUST NOT rely on frontend hd param alone
-  if (info.hd !== c.env.ALLOWED_DOMAIN) return c.redirect('/login?error=domain_not_allowed')
-  if (info.email_verified !== 'true') return c.redirect('/login?error=email_not_verified')
+  if (info.hd !== c.env.ALLOWED_DOMAIN) return c.redirect(`${frontendOrigin}/login?error=domain_not_allowed`)
+  if (info.email_verified !== 'true') return c.redirect(`${frontendOrigin}/login?error=email_not_verified`)
 
   const role = getRole(info.email, c.env.ADMIN_EMAILS, c.env.UPLOADER_EMAILS)
   const jwt = await signJWT(
@@ -78,14 +79,7 @@ auth.get('/callback', async (c) => {
     c.env.JWT_SECRET
   )
 
-  // Redirect to frontend /auth/callback with token.
-  // The frontend then calls /api/auth/finalize (through Vite proxy) so the
-  // cookie is set on the frontend's origin — required for cross-port local dev.
-  const frontendBase = url.hostname === 'localhost'
-    ? 'http://localhost:5173'
-    : `https://tb-pages.${c.env.ALLOWED_DOMAIN}`
-
-  return c.redirect(`${frontendBase}/auth/callback?token=${encodeURIComponent(jwt)}`)
+  return c.redirect(`${frontendOrigin}/auth/callback?token=${encodeURIComponent(jwt)}`)
 })
 
 // Step 3: frontend calls this (through proxy) to set the HttpOnly cookie

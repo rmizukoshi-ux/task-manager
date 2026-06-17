@@ -15,6 +15,7 @@ bucket_name = "tb-pages-storage"
 [vars]
 ENVIRONMENT = "production"
 ALLOWED_DOMAIN = "a-cial.com"
+FRONTEND_URL = "https://ef7cd75b.tb-pages-frontend.pages.dev"
 
 # Secrets (set via `wrangler secret put` or Cloudflare dashboard):
 # - GOOGLE_CLIENT_ID

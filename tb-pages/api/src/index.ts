@@ -14,6 +14,7 @@ export type Env = {
   UPLOADER_EMAILS: string
   ALLOWED_DOMAIN: string
   ENVIRONMENT: string
+  FRONTEND_URL?: string
 }
 
 const app = new Hono<{ Bindings: Env }>()
@@ -21,7 +22,7 @@ const app = new Hono<{ Bindings: Env }>()
 app.use('*', cors({
   origin: (origin) => {
     if (!origin) return null
-    const allowed = ['http://localhost:5173', 'https://tb-pages.a-cial.com', 'https://pages.a-cial.com']
+    const allowed = ['http://localhost:5173', 'https://tb-pages.a-cial.com', 'https://pages.a-cial.com', 'https://ef7cd75b.tb-pages-frontend.pages.dev']
     return allowed.includes(origin) ? origin : null
   },
   credentials: true,

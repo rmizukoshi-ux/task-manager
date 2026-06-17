@@ -23,8 +23,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const API = import.meta.env.VITE_API_BASE_URL ?? ''
+
   useEffect(() => {
-    fetch('/api/auth/me', { credentials: 'include' })
+    fetch(`${API}/api/auth/me`, { credentials: 'include' })
       .then(r => r.ok ? (r.json() as Promise<User>) : null)
       .then(data => setUser(data))
       .catch(() => setUser(null))
@@ -32,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    await fetch(`${API}/api/auth/logout`, { method: 'POST', credentials: 'include' })
     setUser(null)
   }
 

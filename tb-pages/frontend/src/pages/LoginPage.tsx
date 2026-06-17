@@ -31,7 +31,7 @@ export function LoginPage() {
             {ERROR_MESSAGES[error] ?? 'エラーが発生しました'}
           </p>
         )}
-        <a href="/api/auth/google" className={styles.button}>
+        <a href={`${import.meta.env.VITE_API_BASE_URL ?? ''}/api/auth/google`} className={styles.button}>
           <GoogleIcon />
           Googleでログイン
         </a>
