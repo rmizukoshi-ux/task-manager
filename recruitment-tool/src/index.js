@@ -13,6 +13,7 @@ export default {
     if (p === '/auth/start')           return authStart(env);
     if (p === '/auth/callback')        return authCallback(request, env);
     if (p === '/auth/google/callback') return authCallback(request, env);
+    if (p === '/auth/refresh' && m === 'POST') return authRefresh(request, env);
     if (p === '/auth/debug')           return authDebug(request, env);
 
     if (p === '/api/analyze'   && m === 'POST') return apiAnalyze(request, env);
@@ -97,6 +98,26 @@ function authDebug(request, env) {
     ALLOWED_DOMAIN,
   };
   return new Response(JSON.stringify(info, null, 2), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+}
+
+async function authRefresh(request, env) {
+  try {
+    const { refreshToken } = await request.json();
+    if (!refreshToken) return new Response(JSON.stringify({ error: 'refresh_token が必要です' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken,
+        client_id: env.GOOGLE_CLIENT_ID || '', client_secret: env.GOOGLE_CLIENT_SECRET || '' }),
+    });
+    const tok = await res.json();
+    if (!tok.access_token) {
+      return new Response(JSON.stringify({ error: tok.error_description || tok.error || 'リフレッシュ失敗' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+    const expiry = Date.now() + (tok.expires_in || 3600) * 1000;
+    return new Response(JSON.stringify({ access_token: tok.access_token, expiry }), { headers: { 'Content-Type': 'application/json' } });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
 }
 
 // ── テンプレートCRUD ─────────────────────────────────────────────────
@@ -692,6 +713,21 @@ function getToken() {
   var exp = parseInt(localStorage.getItem('g_exp') || '0');
   return (tok && Date.now() < exp) ? tok : null;
 }
+async function ensureToken() {
+  var tok = getToken();
+  if (tok) return tok;
+  var ref = localStorage.getItem('g_ref');
+  if (!ref) return null;
+  try {
+    var r = await fetch('/auth/refresh', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ refreshToken: ref }) });
+    var d = await r.json();
+    if (!d.access_token) return null;
+    localStorage.setItem('g_tok', d.access_token);
+    localStorage.setItem('g_exp', String(d.expiry));
+    updateAuthUI();
+    return d.access_token;
+  } catch(e) { return null; }
+}
 function clearToken() {
   ['g_tok','g_exp','g_ref','g_email'].forEach(function(k){ localStorage.removeItem(k); });
 }
@@ -1187,11 +1223,18 @@ async function run() {
   var initial = document.getElementById('initial').value.trim();
   var month   = document.getElementById('month').value.trim();
   var price   = document.getElementById('price').value.trim();
-  var token   = getToken();
   var pdfText = activeTab === 'upload'
     ? fileEntries.filter(function(e){ return e.state==='ok'; }).map(function(e){ return '=== '+e.name+' ===\\n'+e.text; }).join('\\n\\n')
     : document.getElementById('paste-text').value.trim();
-  if (!pdfText || !token) return;
+  if (!pdfText) return;
+
+  var token = await ensureToken();
+  if (!token) {
+    var box = document.getElementById('error-box');
+    box.textContent = 'エラー: Googleセッション切れです。右上の「Googleと連携」から再認証してください。';
+    box.style.display = 'block';
+    return;
+  }
 
   document.getElementById('run-btn').disabled = true;
   document.getElementById('progress').classList.add('show');
@@ -1273,6 +1316,7 @@ function copyText(id, btnId) {
 try { updateAuthUI(); } catch(e) { console.error('updateAuthUI error:', e); }
 try { buildScoreGrid(); } catch(e) { console.error('buildScoreGrid error:', e); }
 try { loadScoreHistory(); } catch(e) { console.error('loadScoreHistory error:', e); }
+setInterval(function(){ try { checkReady(); } catch(e){} }, 30000);
 
 (function() {
   var p = new URLSearchParams(location.search);
