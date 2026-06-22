@@ -13,6 +13,7 @@ export default {
     if (p === '/auth/start')           return authStart(env);
     if (p === '/auth/callback')        return authCallback(request, env);
     if (p === '/auth/google/callback') return authCallback(request, env);
+    if (p === '/auth/refresh' && m === 'POST') return authRefresh(request, env);
     if (p === '/auth/debug')           return authDebug(request, env);
 
     if (p === '/api/analyze'   && m === 'POST') return apiAnalyze(request, env);
@@ -99,6 +100,26 @@ function authDebug(request, env) {
   return new Response(JSON.stringify(info, null, 2), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
 }
 
+async function authRefresh(request, env) {
+  try {
+    const { refreshToken } = await request.json();
+    if (!refreshToken) return new Response(JSON.stringify({ error: 'refresh_token が必要です' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken,
+        client_id: env.GOOGLE_CLIENT_ID || '', client_secret: env.GOOGLE_CLIENT_SECRET || '' }),
+    });
+    const tok = await res.json();
+    if (!tok.access_token) {
+      return new Response(JSON.stringify({ error: tok.error_description || tok.error || 'リフレッシュ失敗' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+    const expiry = Date.now() + (tok.expires_in || 3600) * 1000;
+    return new Response(JSON.stringify({ access_token: tok.access_token, expiry }), { headers: { 'Content-Type': 'application/json' } });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
+}
+
 // ── テンプレートCRUD ─────────────────────────────────────────────────
 const J = { 'Content-Type': 'application/json; charset=utf-8' };
 async function tplList(env) {
@@ -144,20 +165,20 @@ ${text}
   「○○ファースト」等の抽象的フレーズは避け、数字・実績・技術名を優先して記述すること。
 - qualifications: 取得資格（なければ必ず空文字。"不明"や"なし"は書かない）
 - positionYears: 各ポジションの合計経験年数。経験なしは空文字。「X年Xか月」形式
-  - PM: 1次請けとして顧客との契約調整・見積作成・リソース管理など実質的なPM業務を担った合計年数。肩書がPLでも1次請けでPM相当業務を担っている場合はカウントする
-  - PL: プロジェクトリーダーとして従事した全プロジェクトの合計年数
+  - PdM: プロダクトマネージャーとして従事した全プロジェクトの合計年数。1次請けとして顧客との契約調整・見積作成・リソース管理など実質的なPM業務を担った年数も含む
+  - Dir: ディレクター・WEBディレクター・テックリード・プロジェクトリーダーとして従事した全プロジェクトの合計年数
 - processYears: 各工程の合計経験年数。経験なしは空文字。「X年Xか月」形式
-  - 調査・管理: PL/PMとして従事した全プロジェクト期間の合計（PL/PM役割には常に調査・管理が含まれるため、PL/PM在籍期間をすべてカウントする）
+  - ディレクション: Dir/PdM/PMOとして従事した全プロジェクト期間の合計（Dir/PdM/PMO役割には常にディレクションが含まれるため、在籍期間をすべてカウントする）
   - 要件定義: 要件定義・上流工程を担当した期間の合計。顧客との仕様調整・契約調整・見積作成・ベンダコントロールなども含む
   - 基本設計・詳細設計・製造: 明示されている場合のみカウント
   - テスト: QA・テスト業務に従事した全プロジェクト期間の合計
-  - 運用・保守: 明示されている場合のみカウント
+  - 運用保守: 明示されている場合のみカウント
 - devEnv: 開発環境・言語・OSを列挙。OS（iOS/Android等）はスキルシートに記載されている順番で先に列挙し、その後に言語・フレームワーク・ツールを経験年数が長い順に追加。「X年Xか月」形式
 - projects: 案件を【古い順（開始日が早い順）】に並べる
-  - position: 「PM」→「プロジェクトマネージャー」、「PL」→「プロジェクトリーダー」、「SE」→「SE」、「PG」→「PG」、「PMO」→「PMO」
-  - teamSize: 「1-4名」「5-10名」「11-20名」「21名以上」のいずれか
+  - position: スキルシートの肩書をそのまま短縮コードで記載。「プロダクトマネージャー/PdM」→「PdM」、「ディレクター/Dir/WEBディレクター」→「Dir」、「PMO」→「PMO」、「SE」→「SE」、「PG」→「PG」
+  - teamSize: スキルシートに記載の実際の人数をそのまま記載（例: "40人"、"2-3人"、"170人"）
   - devEnv: カンマ区切り（例: "iOS, Android"）
-  - processes: 担当工程リスト。選択肢: ["調査・管理","要件定義","基本設計","詳細設計","製造","テスト","運用・保守"]。PL/PMとして従事した案件は必ず「調査・管理」を含める
+  - processes: 担当工程リスト。選択肢: ["ディレクション","要件定義","基本設計","詳細設計","製造","テスト","運用保守"]。Dir/PdM/PMOとして従事した案件は必ず「ディレクション」を含める
   - content: 以下の形式で記載（300文字以内）。
     ■案件名
     【業務内容】
@@ -168,11 +189,11 @@ ${text}
 {
   "selfPR":"自己PR300文字程度",
   "qualifications":"取得資格（なければ空文字）",
-  "positionYears":{"PM":"X年Xか月","PL":"X年Xか月","PMO":"","SE":"","PG":""},
-  "processYears":{"調査・管理":"X年Xか月","要件定義":"X年Xか月","基本設計":"","詳細設計":"","製造":"","テスト":"X年Xか月","運用・保守":""},
+  "positionYears":{"PdM":"X年Xか月","Dir":"X年Xか月","PMO":"","SE":"","PG":""},
+  "processYears":{"ディレクション":"X年Xか月","要件定義":"X年Xか月","基本設計":"","詳細設計":"","製造":"","テスト":"X年Xか月","運用保守":""},
   "devEnv":[{"name":"iOS","years":"X年Xか月"},{"name":"Android","years":"X年Xか月"}],
-  "projects":[{"position":"プロジェクトリーダー","startMonth":"2009年7月","endMonth":"2013年9月","teamSize":"11-20名","processes":["調査・管理","テスト"],"content":"■某メーカ向け端末検証\n【業務内容】\n・ガラケー、スマホ端末の機能試験（設計・実施）\n・PJ進捗管理","devEnv":"Android"}],
-  "skills":{"experience":"PL、QAエンジニア","devEnvSummary":"iOS、Android","tools":"MagicPod","strengths":["強み1","強み2","強み3"]}
+  "projects":[{"position":"Dir","startMonth":"2009年7月","endMonth":"2013年9月","teamSize":"40人","processes":["ディレクション","テスト"],"content":"■某メーカ向け端末検証\n【業務内容】\n・ガラケー、スマホ端末の機能試験（設計・実施）\n・PJ進捗管理","devEnv":"Android"}],
+  "skills":{"experience":"Dir、PdM","devEnvSummary":"HTML、CSS","tools":"figma","strengths":["強み1","強み2","強み3"]}
 }`;
 
     const ai = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
@@ -346,8 +367,8 @@ function buildCellValues(tabName, d) {
   add('F4', tabName);
   if (d.selfPR) add('F5', d.selfPR);
   if (d.qualifications) add('F9', d.qualifications);
-  ['PM','PL','PMO','SE','PG'].forEach((p, i) => { if (d.positionYears?.[p]) add(`E${15+i}`, d.positionYears[p]); });
-  ['調査・管理','要件定義','基本設計','詳細設計','製造','テスト','運用・保守'].forEach((p, i) => { if (d.processYears?.[p]) add(`J${15+i}`, d.processYears[p]); });
+  ['PdM','Dir','PMO','SE','PG'].forEach((p, i) => { if (d.positionYears?.[p]) add(`E${15+i}`, d.positionYears[p]); });
+  ['ディレクション','要件定義','基本設計','詳細設計','製造','テスト','運用保守'].forEach((p, i) => { if (d.processYears?.[p]) add(`J${15+i}`, d.processYears[p]); });
   (d.devEnv || []).forEach((e, i) => {
     if (i >= 21) return;
     let row, nc, yc;
@@ -356,7 +377,7 @@ function buildCellValues(tabName, d) {
     else             { row = 15+(i-14);nc='Y'; yc='AB'; }
     add(`${nc}${row}`, e.name); add(`${yc}${row}`, e.years);
   });
-  const procOff = { '調査・管理':2,'要件定義':4,'基本設計':6,'詳細設計':8,'製造':10,'テスト':12,'運用・保守':14 };
+  const procOff = { 'ディレクション':2,'要件定義':4,'基本設計':6,'詳細設計':8,'製造':10,'テスト':12,'運用保守':14 };
   (d.projects || []).forEach((proj, idx) => {
     if (idx >= 20) return;
     const f = 23 + idx * 16;
@@ -691,6 +712,21 @@ function getToken() {
   var tok = localStorage.getItem('g_tok');
   var exp = parseInt(localStorage.getItem('g_exp') || '0');
   return (tok && Date.now() < exp) ? tok : null;
+}
+async function ensureToken() {
+  var tok = getToken();
+  if (tok) return tok;
+  var ref = localStorage.getItem('g_ref');
+  if (!ref) return null;
+  try {
+    var r = await fetch('/auth/refresh', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ refreshToken: ref }) });
+    var d = await r.json();
+    if (!d.access_token) return null;
+    localStorage.setItem('g_tok', d.access_token);
+    localStorage.setItem('g_exp', String(d.expiry));
+    updateAuthUI();
+    return d.access_token;
+  } catch(e) { return null; }
 }
 function clearToken() {
   ['g_tok','g_exp','g_ref','g_email'].forEach(function(k){ localStorage.removeItem(k); });
@@ -1187,11 +1223,18 @@ async function run() {
   var initial = document.getElementById('initial').value.trim();
   var month   = document.getElementById('month').value.trim();
   var price   = document.getElementById('price').value.trim();
-  var token   = getToken();
   var pdfText = activeTab === 'upload'
     ? fileEntries.filter(function(e){ return e.state==='ok'; }).map(function(e){ return '=== '+e.name+' ===\\n'+e.text; }).join('\\n\\n')
     : document.getElementById('paste-text').value.trim();
-  if (!pdfText || !token) return;
+  if (!pdfText) return;
+
+  var token = await ensureToken();
+  if (!token) {
+    var box = document.getElementById('error-box');
+    box.textContent = 'エラー: Googleセッション切れです。右上の「Googleと連携」から再認証してください。';
+    box.style.display = 'block';
+    return;
+  }
 
   document.getElementById('run-btn').disabled = true;
   document.getElementById('progress').classList.add('show');
@@ -1273,6 +1316,7 @@ function copyText(id, btnId) {
 try { updateAuthUI(); } catch(e) { console.error('updateAuthUI error:', e); }
 try { buildScoreGrid(); } catch(e) { console.error('buildScoreGrid error:', e); }
 try { loadScoreHistory(); } catch(e) { console.error('loadScoreHistory error:', e); }
+setInterval(function(){ try { checkReady(); } catch(e){} }, 30000);
 
 (function() {
   var p = new URLSearchParams(location.search);
