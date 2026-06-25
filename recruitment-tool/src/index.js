@@ -143,7 +143,6 @@ async function apiAnalyze(request, env) {
     const { initial, month, price, pdfText } = await request.json();
     if (!pdfText || !initial || !month || !price)
       return new Response(JSON.stringify({ error: '必要なデータが不足しています' }), { status: 400, headers: J });
-    const text = pdfText.length > 10000 ? pdfText.slice(0, 10000) + '\n...' : pdfText;
     const today = new Date();
     const nowYM = `${today.getFullYear()}年${today.getMonth() + 1}月`;
 
@@ -152,7 +151,7 @@ async function apiAnalyze(request, env) {
 入力: イニシャル=${initial} 入社月=${month}月 単価=${price}万 現在=${nowYM}
 
 スキルシート:
-${text}
+${pdfText}
 
 【抽出ルール】
 - selfPR: 自己PRセクション全体を読み込み、以下を含む300文字程度の文章（箇条書き・見出し番号不要）でまとめる。
@@ -196,12 +195,18 @@ ${text}
         { role: 'system', content: 'JSONのみ出力。前置きや説明は不要。' },
         { role: 'user', content: prompt },
       ],
-      max_tokens: 6000,
+      max_tokens: 8000,
     });
     const raw = ai?.response || '';
     const m2 = raw.match(/\{[\s\S]*\}/);
     if (!m2) throw new Error('AI応答からJSONを取得できませんでした: ' + raw.slice(0, 200));
-    const data = JSON.parse(m2[0]);
+    const jsonStr = m2[0];
+    let data;
+    try {
+      data = JSON.parse(jsonStr);
+    } catch (e) {
+      throw new Error('AIの応答JSONが不完全です（トークン上限に達した可能性）。再試行してください。');
+    }
     return new Response(JSON.stringify({ summary: buildSummary(initial, month, price, data), data }), { headers: J });
   } catch (e) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
