@@ -1,16 +1,40 @@
-CREATE TABLE IF NOT EXISTS score_results (
-  id         TEXT PRIMARY KEY,
-  candidate  TEXT NOT NULL,
-  total      INTEGER NOT NULL,
-  grade      TEXT NOT NULL,
-  detail     TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now'))
+-- ── 候補者マスタ（ATSの中心レコード）────────────────────────────────
+CREATE TABLE IF NOT EXISTS candidates (
+  id            TEXT PRIMARY KEY,
+  name          TEXT NOT NULL,
+  initial       TEXT,
+  email         TEXT,
+  phone         TEXT,
+  channel       TEXT,
+  stage         TEXT NOT NULL DEFAULT '書類受領',
+  score_total   INTEGER,
+  score_grade   TEXT,
+  score_detail  TEXT,
+  skills_data   TEXT,
+  sheet_url     TEXT,
+  drive_files   TEXT DEFAULT '[]',
+  strengths     TEXT DEFAULT '[]',
+  note          TEXT DEFAULT '',
+  created_at    TEXT DEFAULT (datetime('now')),
+  updated_at    TEXT DEFAULT (datetime('now'))
 );
 
+-- ── 選考ステージ変更履歴 ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS pipeline_history (
+  id            TEXT PRIMARY KEY,
+  candidate_id  TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+  from_stage    TEXT,
+  to_stage      TEXT NOT NULL,
+  changed_by    TEXT,
+  note          TEXT,
+  created_at    TEXT DEFAULT (datetime('now'))
+);
+
+-- ── 面接質問テンプレート（変更なし）────────────────────────────────
 CREATE TABLE IF NOT EXISTS q_templates (
-  id        TEXT PRIMARY KEY,
-  category  TEXT NOT NULL,
-  question  TEXT NOT NULL,
+  id         TEXT PRIMARY KEY,
+  category   TEXT NOT NULL,
+  question   TEXT NOT NULL,
   sort_order INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
