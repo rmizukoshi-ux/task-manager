@@ -47,6 +47,14 @@ export default {
     // 重複チェック
     if (p === '/api/duplicate-check' && m === 'GET') return duplicateCheck(request, env);
 
+    // Drive連携
+    if (/^\/api\/candidates\/[^/]+\/drive$/.test(p) && m === 'GET')    return driveFileList(env, p.split('/')[3]);
+    if (/^\/api\/candidates\/[^/]+\/drive$/.test(p) && m === 'POST')   return driveFileAdd(request, env, p.split('/')[3]);
+    if (/^\/api\/candidates\/[^/]+\/drive\/[^/]+$/.test(p) && m === 'DELETE') return driveFileDelete(env, p.split('/')[3], p.split('/')[5]);
+
+    // ファネル分析
+    if (p === '/api/funnel' && m === 'GET') return funnelStats(env);
+
     return new Response(HTML, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   },
 };
@@ -570,6 +578,103 @@ async function stageHistory(env, id) {
       'SELECT * FROM pipeline_history WHERE candidate_id = ? ORDER BY created_at ASC'
     ).bind(id).all();
     return new Response(JSON.stringify(rows.results || []), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+// ── Drive連携 ──────────────────────────────────────────────────────────
+
+async function driveFileList(env, id) {
+  try {
+    const row = await env.DB.prepare('SELECT drive_files FROM candidates WHERE id = ?').bind(id).first();
+    if (!row) return new Response(JSON.stringify({ error: '候補者が見つかりません' }), { status: 404, headers: J });
+    const files = JSON.parse(row.drive_files || '[]');
+    return new Response(JSON.stringify(files), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+async function driveFileAdd(request, env, id) {
+  try {
+    const body = await request.json();
+    const { file_id, name, url, mime_type } = body;
+    if (!file_id || !name || !url) {
+      return new Response(JSON.stringify({ error: 'file_id, name, url は必須です' }), { status: 400, headers: J });
+    }
+
+    const row = await env.DB.prepare('SELECT drive_files FROM candidates WHERE id = ?').bind(id).first();
+    if (!row) return new Response(JSON.stringify({ error: '候補者が見つかりません' }), { status: 404, headers: J });
+
+    const files = JSON.parse(row.drive_files || '[]');
+    if (files.find(f => f.file_id === file_id)) {
+      return new Response(JSON.stringify({ error: '既に登録済みのファイルです' }), { status: 409, headers: J });
+    }
+
+    files.push({ file_id, name, url, mime_type: mime_type || '', added_at: new Date().toISOString() });
+
+    await env.DB.prepare(
+      "UPDATE candidates SET drive_files = ?, updated_at = datetime('now') WHERE id = ?"
+    ).bind(JSON.stringify(files), id).run();
+
+    return new Response(JSON.stringify({ ok: true, files }), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+async function driveFileDelete(env, id, fileId) {
+  try {
+    const row = await env.DB.prepare('SELECT drive_files FROM candidates WHERE id = ?').bind(id).first();
+    if (!row) return new Response(JSON.stringify({ error: '候補者が見つかりません' }), { status: 404, headers: J });
+
+    const files = JSON.parse(row.drive_files || '[]');
+    const updated = files.filter(f => f.file_id !== fileId);
+    if (updated.length === files.length) {
+      return new Response(JSON.stringify({ error: 'ファイルが見つかりません' }), { status: 404, headers: J });
+    }
+
+    await env.DB.prepare(
+      "UPDATE candidates SET drive_files = ?, updated_at = datetime('now') WHERE id = ?"
+    ).bind(JSON.stringify(updated), id).run();
+
+    return new Response(JSON.stringify({ ok: true, files: updated }), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+// ── ファネル分析 ────────────────────────────────────────────────────────
+
+async function funnelStats(env) {
+  try {
+    const rows = await env.DB.prepare(
+      'SELECT stage, COUNT(*) as count FROM candidates GROUP BY stage'
+    ).all();
+
+    const stageCounts = {};
+    for (const r of rows.results || []) {
+      stageCounts[r.stage] = r.count;
+    }
+
+    const funnel = VALID_STAGES.map(stage => ({
+      stage,
+      count: stageCounts[stage] || 0,
+    }));
+
+    // 変換率（直前ステージとの比較）
+    for (let i = 1; i < funnel.length; i++) {
+      const prev = funnel[i - 1].count;
+      funnel[i].conversion = prev > 0 ? Math.round((funnel[i].count / prev) * 1000) / 10 : null;
+    }
+
+    const total = await env.DB.prepare('SELECT COUNT(*) as count FROM candidates').first();
+
+    return new Response(JSON.stringify({
+      funnel,
+      total: total?.count || 0,
+    }), { headers: J });
   } catch (e) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
   }
