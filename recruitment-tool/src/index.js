@@ -178,6 +178,13 @@ ${pdfText}
     【業務内容】
     ・主要業務1
     ・主要業務2（必要に応じて3行まで）
+- skills.strengths: 候補者の客観的な強みを3〜5点、以下の観点から抽出する
+  ① 経験年数が最も長いポジション（PM/PL/SE/PG/PMO）
+  ② 経験年数が最も長い工程（要件定義/製造/テスト等）
+  ③ 経験年数が最も長い技術・言語
+  ④ チームマネジメント実績（最大チームサイズと年数）
+  ⑤ 顧客折衝・上流経験の有無と年数
+  各強みは「〇〇経験X年」「X名規模のチームをリード」など数字付きで表現すること
 
 出力JSON（このフォーマットのみ）:
 {
@@ -187,7 +194,7 @@ ${pdfText}
   "processYears":{"調査・管理":"X年Xか月","要件定義":"X年Xか月","基本設計":"","詳細設計":"","製造":"","テスト":"X年Xか月","運用・保守":""},
   "devEnv":[{"name":"iOS","years":"X年Xか月"},{"name":"Android","years":"X年Xか月"}],
   "projects":[{"position":"プロジェクトリーダー","startMonth":"2009年7月","endMonth":"2013年9月","teamSize":"11-20名","processes":["調査・管理","テスト"],"content":"■某メーカ向け端末検証\n【業務内容】\n・ガラケー、スマホ端末の機能試験（設計・実施）\n・PJ進捗管理","devEnv":"Android"}],
-  "skills":{"experience":"PL、QAエンジニア","devEnvSummary":"iOS、Android","tools":"MagicPod","strengths":["強み1","強み2","強み3"]}
+  "skills":{"experience":"PL、QAエンジニア","devEnvSummary":"iOS、Android","tools":"MagicPod","strengths":["PL経験8年3か月","20名規模のチームをリード","iOS/Android開発経験10年以上","顧客折衝・要件定義経験5年"]}
 }`;
 
     const ai = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
@@ -244,24 +251,38 @@ async function apiQuestions(request, env) {
   // AI生成（失敗しても続行）
   let aiQ = {};
   try {
-    const profile = `スキル概要: ${data.skills?.experience || ''}
-開発環境: ${data.skills?.devEnvSummary || ''}
-ポジション経験: ${JSON.stringify(data.positionYears || {})}
-工程経験: ${JSON.stringify(data.processYears || {})}
-最新案件: ${(data.projects || []).slice(-2).map(p => p.content).join('、')}`;
+    const profile = `
+【氏名イニシャル】${data.initial || ''}
+【スコア合計】${data.score_total != null ? data.score_total + '点' : '未採点'} / グレード: ${data.score_grade || '未採点'}
+【スコア詳細（7軸）】${JSON.stringify(data.score_detail || {})}
+【ポジション経験年数】${JSON.stringify(data.positionYears || {})}
+【工程経験年数】${JSON.stringify(data.processYears || {})}
+【強み】${(data.strengths || data.skills?.strengths || []).join('、')}
+【開発環境・スキル】${data.skills?.devEnvSummary || ''}
+【最新案件（直近3件）】${(data.projects || []).slice(-3).map(p => p.content).join('\n---\n')}`;
     const prompt = `以下の候補者プロフィールに基づき、面接で使える深掘り質問を日本語で生成してください。JSONのみ出力。説明不要。
+
+【生成ルール】
+- スコア詳細で低い軸（3点以下）がある場合、そのポイントを確認・深掘りする質問を優先的に生成すること
+- ポジション経験年数・工程経験年数に即した具体的な経験を問う質問にすること
+- 「スポーツ経歴」カテゴリは必ず2問以上生成すること
+- 抽象的な質問（「課題に直面したことはありますか」等）は避け、候補者の実経験に紐づけた質問にすること
+- スコアが低い軸に対応した「弱点確認」カテゴリの質問を2問生成すること
+
 候補者プロフィール:
 ${profile}
-出力形式:
-{"技術深掘り":["質問1","質問2","質問3"],"上流工程・PM経験":["質問1","質問2"],"AI活用":["質問1","質問2"]}
-各カテゴリ2〜3問。候補者の経験に具体的に即した質問にすること。`;
+
+出力形式（JSONのみ）:
+{"技術深掘り":["質問1","質問2","質問3"],"上流工程・PM経験":["質問1","質問2"],"AI活用":["質問1","質問2"],"スポーツ経歴":["質問1","質問2"],"弱点確認":["質問1","質問2"]}`;
     const ai = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [{ role: 'system', content: 'JSONのみ出力。' }, { role: 'user', content: prompt }],
-      max_tokens: 1500,
+      max_tokens: 2000,
     });
     const raw = ai?.response || '';
     const m2 = raw.match(/\{[\s\S]*\}/);
-    if (m2) aiQ = JSON.parse(m2[0]);
+    if (m2) {
+      try { aiQ = JSON.parse(m2[0]); } catch (_) {}
+    }
   } catch (_) {}
 
   // D1テンプレート（失敗しても続行）
