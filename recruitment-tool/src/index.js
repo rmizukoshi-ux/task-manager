@@ -40,6 +40,10 @@ export default {
     if (/^\/api\/candidates\/[^/]+$/.test(p) && m === 'PUT')    return candidateUpdate(request, env, p.split('/')[3]);
     if (/^\/api\/candidates\/[^/]+$/.test(p) && m === 'DELETE') return candidateDelete(env, p.split('/')[3]);
 
+    // ステージ変更・履歴
+    if (/^\/api\/candidates\/[^/]+\/stage$/.test(p) && m === 'POST')  return stageChange(request, env, p.split('/')[3]);
+    if (/^\/api\/candidates\/[^/]+\/history$/.test(p) && m === 'GET') return stageHistory(env, p.split('/')[3]);
+
     // 重複チェック
     if (p === '/api/duplicate-check' && m === 'GET') return duplicateCheck(request, env);
 
@@ -493,6 +497,52 @@ async function duplicateCheck(request, env) {
 
     const sql = `SELECT id,name,initial,email,phone,stage FROM candidates WHERE ${conditions.join(' OR ')} LIMIT 10`;
     const rows = await env.DB.prepare(sql).bind(...binds).all();
+    return new Response(JSON.stringify(rows.results || []), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+// ── ステージ管理 ───────────────────────────────────────────────────────
+
+async function stageChange(request, env, id) {
+  try {
+    const { to_stage, changed_by, note } = await request.json();
+    if (!to_stage) return new Response(JSON.stringify({ error: 'to_stage は必須です' }), { status: 400, headers: J });
+    if (!VALID_STAGES.includes(to_stage)) {
+      return new Response(JSON.stringify({ error: `無効なステージ: ${to_stage}` }), { status: 400, headers: J });
+    }
+
+    const row = await env.DB.prepare('SELECT stage FROM candidates WHERE id = ?').bind(id).first();
+    if (!row) return new Response(JSON.stringify({ error: '候補者が見つかりません' }), { status: 404, headers: J });
+
+    const from_stage = row.stage;
+
+    // candidates.stage を更新
+    await env.DB.prepare(
+      "UPDATE candidates SET stage = ?, updated_at = datetime('now') WHERE id = ?"
+    ).bind(to_stage, id).run();
+
+    // pipeline_history に記録
+    const histId = crypto.randomUUID();
+    await env.DB.prepare(
+      'INSERT INTO pipeline_history (id,candidate_id,from_stage,to_stage,changed_by,note) VALUES (?,?,?,?,?,?)'
+    ).bind(histId, id, from_stage, to_stage, changed_by || '', note || '').run();
+
+    return new Response(JSON.stringify({ ok: true, from_stage, to_stage }), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+async function stageHistory(env, id) {
+  try {
+    const row = await env.DB.prepare('SELECT id FROM candidates WHERE id = ?').bind(id).first();
+    if (!row) return new Response(JSON.stringify({ error: '候補者が見つかりません' }), { status: 404, headers: J });
+
+    const rows = await env.DB.prepare(
+      'SELECT * FROM pipeline_history WHERE candidate_id = ? ORDER BY created_at ASC'
+    ).bind(id).all();
     return new Response(JSON.stringify(rows.results || []), { headers: J });
   } catch (e) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
