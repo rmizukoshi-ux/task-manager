@@ -33,6 +33,16 @@ export default {
     if (p.startsWith('/api/templates/') && m === 'PUT')    return tplUpdate(request, env, p.split('/')[3]);
     if (p.startsWith('/api/templates/') && m === 'DELETE') return tplDelete(env, p.split('/')[3]);
 
+    // 候補者管理
+    if (p === '/api/candidates' && m === 'GET')  return candidateList(request, env);
+    if (p === '/api/candidates' && m === 'POST') return candidateCreate(request, env);
+    if (/^\/api\/candidates\/[^/]+$/.test(p) && m === 'GET')    return candidateGet(env, p.split('/')[3]);
+    if (/^\/api\/candidates\/[^/]+$/.test(p) && m === 'PUT')    return candidateUpdate(request, env, p.split('/')[3]);
+    if (/^\/api\/candidates\/[^/]+$/.test(p) && m === 'DELETE') return candidateDelete(env, p.split('/')[3]);
+
+    // 重複チェック
+    if (p === '/api/duplicate-check' && m === 'GET') return duplicateCheck(request, env);
+
     return new Response(HTML, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   },
 };
@@ -369,3 +379,122 @@ function buildCellValues(tabName, d) {
   return out;
 }
 
+
+// ── 候補者CRUD ────────────────────────────────────────────────────────
+
+const VALID_STAGES = ['書類受領','スキルシート解析','スコアリング','一次面接','二次面接','オファー','入社','見送り','辞退'];
+
+async function candidateList(request, env) {
+  try {
+    const url = new URL(request.url);
+    const stage = url.searchParams.get('stage');
+    let query = 'SELECT * FROM candidates ORDER BY updated_at DESC';
+    let rows;
+    if (stage) {
+      rows = await env.DB.prepare('SELECT * FROM candidates WHERE stage = ? ORDER BY updated_at DESC').bind(stage).all();
+    } else {
+      rows = await env.DB.prepare(query).all();
+    }
+    return new Response(JSON.stringify(rows.results || []), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+async function candidateCreate(request, env) {
+  try {
+    const body = await request.json();
+    const { name, initial, email, phone, channel, stage, note } = body;
+    if (!name) return new Response(JSON.stringify({ error: '氏名は必須です' }), { status: 400, headers: J });
+    const id = crypto.randomUUID();
+    const s = stage && VALID_STAGES.includes(stage) ? stage : '書類受領';
+    await env.DB.prepare(
+      'INSERT INTO candidates (id,name,initial,email,phone,channel,stage,note) VALUES (?,?,?,?,?,?,?,?)'
+    ).bind(id, name, initial || '', email || '', phone || '', channel || '', s, note || '').run();
+    return new Response(JSON.stringify({ id }), { status: 201, headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+async function candidateGet(env, id) {
+  try {
+    const row = await env.DB.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
+    if (!row) return new Response(JSON.stringify({ error: '候補者が見つかりません' }), { status: 404, headers: J });
+    return new Response(JSON.stringify(row), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+async function candidateUpdate(request, env, id) {
+  try {
+    const body = await request.json();
+    const row = await env.DB.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
+    if (!row) return new Response(JSON.stringify({ error: '候補者が見つかりません' }), { status: 404, headers: J });
+
+    const name        = body.name        !== undefined ? body.name        : row.name;
+    const initial     = body.initial     !== undefined ? body.initial     : row.initial;
+    const email       = body.email       !== undefined ? body.email       : row.email;
+    const phone       = body.phone       !== undefined ? body.phone       : row.phone;
+    const channel     = body.channel     !== undefined ? body.channel     : row.channel;
+    const stage       = body.stage && VALID_STAGES.includes(body.stage) ? body.stage : row.stage;
+    const score_total = body.score_total !== undefined ? body.score_total : row.score_total;
+    const score_grade = body.score_grade !== undefined ? body.score_grade : row.score_grade;
+    const score_detail= body.score_detail!== undefined ? JSON.stringify(body.score_detail) : row.score_detail;
+    const skills_data = body.skills_data !== undefined ? JSON.stringify(body.skills_data) : row.skills_data;
+    const sheet_url   = body.sheet_url   !== undefined ? body.sheet_url   : row.sheet_url;
+    const drive_files = body.drive_files !== undefined ? JSON.stringify(body.drive_files) : row.drive_files;
+    const strengths   = body.strengths   !== undefined ? JSON.stringify(body.strengths)   : row.strengths;
+    const note        = body.note        !== undefined ? body.note        : row.note;
+
+    await env.DB.prepare(`
+      UPDATE candidates SET
+        name=?,initial=?,email=?,phone=?,channel=?,stage=?,
+        score_total=?,score_grade=?,score_detail=?,skills_data=?,
+        sheet_url=?,drive_files=?,strengths=?,note=?,
+        updated_at=datetime('now')
+      WHERE id=?
+    `).bind(name,initial,email,phone,channel,stage,
+            score_total,score_grade,score_detail,skills_data,
+            sheet_url,drive_files,strengths,note,id).run();
+
+    return new Response(JSON.stringify({ ok: true }), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+async function candidateDelete(env, id) {
+  try {
+    const row = await env.DB.prepare('SELECT id FROM candidates WHERE id = ?').bind(id).first();
+    if (!row) return new Response(JSON.stringify({ error: '候補者が見つかりません' }), { status: 404, headers: J });
+    await env.DB.prepare('DELETE FROM candidates WHERE id = ?').bind(id).run();
+    return new Response(JSON.stringify({ ok: true }), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
+
+async function duplicateCheck(request, env) {
+  try {
+    const url = new URL(request.url);
+    const name  = url.searchParams.get('name')  || '';
+    const email = url.searchParams.get('email') || '';
+    const phone = url.searchParams.get('phone') || '';
+
+    const conditions = [];
+    const binds = [];
+    if (name)  { conditions.push('name = ?');  binds.push(name); }
+    if (email) { conditions.push('email = ?'); binds.push(email); }
+    if (phone) { conditions.push('phone = ?'); binds.push(phone); }
+
+    if (!conditions.length) return new Response(JSON.stringify([]), { headers: J });
+
+    const sql = `SELECT id,name,initial,email,phone,stage FROM candidates WHERE ${conditions.join(' OR ')} LIMIT 10`;
+    const rows = await env.DB.prepare(sql).bind(...binds).all();
+    return new Response(JSON.stringify(rows.results || []), { headers: J });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: J });
+  }
+}
