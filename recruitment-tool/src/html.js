@@ -958,14 +958,14 @@ function renderCandList(list, box) {
     var gc = 'grade-'+(grade==='A'||grade==='B'||grade==='C'||grade==='D' ? grade : 'x');
     var dt = (c.created_at||'').slice(0,10);
     var sc = STAGE_COLORS[c.stage] || '#9ca3af';
-    html += '<tr onclick="openCandModal(\''+c.id+'\')" style="cursor:pointer;">'
+    html += '<tr data-cid="'+c.id+'" onclick="openCandModal(this.dataset.cid)" style="cursor:pointer;">'
       + '<td style="font-weight:700;">'+esc(c.name)+(c.initial?'<span style="color:#9ca3af;font-weight:400;font-size:11px;margin-left:4px;">('+esc(c.initial)+')</span>':'')+'</td>'
       + '<td><span class="stage-chip" style="background:'+sc+'20;color:'+sc+';">'+esc(c.stage)+'</span></td>'
       + '<td style="text-align:center;"><span class="grade-chip '+gc+'">'+grade+'</span></td>'
       + '<td style="color:#6b7280;">'+esc(c.channel||'-')+'</td>'
       + '<td style="color:#9ca3af;white-space:nowrap;">'+dt+'</td>'
       + '<td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;">'
-      + '<button class="btn-sm btn-danger" onclick="deleteCandidate(\''+c.id+'\')" style="font-size:11px;padding:3px 8px;">削除</button>'
+      + '<button class="btn-sm btn-danger" data-cid="'+c.id+'" onclick="deleteCandidate(this.dataset.cid)" style="font-size:11px;padding:3px 8px;">削除</button>'
       + '</div></td></tr>';
   });
   html += '</tbody></table>';
@@ -986,7 +986,7 @@ function renderKanban(list, box) {
       var cardsHtml = cards.length ? cards.map(function(c) {
         var grade = c.score_grade || '';
         var gc = 'grade-'+(grade==='A'||grade==='B'||grade==='C'||grade==='D' ? grade : 'x');
-        return '<div class="kanban-card" onclick="openCandModal(\''+c.id+'\')">'
+        return '<div class="kanban-card" data-cid="'+c.id+'" onclick="openCandModal(this.dataset.cid)">'
           + '<div class="kc-name">'+esc(c.name)+'</div>'
           + '<div class="kc-meta">'+(c.initial||'')+(grade?' &nbsp;<span class="grade-chip '+gc+'" style="font-size:9px;width:18px;height:18px;line-height:18px;">'+grade+'</span>':'')+'</div>'
           + (c.channel ? '<div class="kc-meta" style="margin-top:2px;">'+esc(c.channel)+'</div>' : '')
@@ -1051,7 +1051,7 @@ async function openCandModal(id) {
       + '<textarea class="note-area" id="modal-note" onblur="saveCandNote()">'+esc(c.note||'')+'</textarea></div>'
       + '<div class="modal-section"><div class="modal-section-title">ステージ変更履歴</div>'+histHtml+'</div>'
       + '<div style="display:flex;gap:8px;margin-top:16px;">'
-      + '<button class="btn-sm btn-danger" onclick="deleteCandidate(\''+c.id+'\',true)">削除</button>'
+      + '<button class="btn-sm btn-danger" data-cid="'+c.id+'" onclick="deleteCandidate(this.dataset.cid,true)">削除</button>'
       + '</div>';
   } catch(e) {
     document.getElementById('modal-body').innerHTML = '<p style="color:#b91c1c;font-size:12px;">読み込み失敗: '+e.message+'</p>';
