@@ -1,0 +1,54 @@
+name: Email triage 1900
+
+on:
+  schedule:
+    # 平日 19:00 JST（月〜金）
+    # JST = UTC+9 のため、19:00 JST = 同日 10:00 UTC
+    - cron: '0 10 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  check-holiday:
+    runs-on: ubuntu-latest
+    outputs:
+      is_holiday: ${{ steps.check.outputs.is_holiday }}
+    steps:
+      - name: 日本の祝日チェック
+        id: check
+        run: |
+          JST_DATE=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://date.nager.at/api/v3/IsTodayPublicHoliday/JP?offset=9")
+          if [ "$STATUS" = "200" ]; then
+            echo "is_holiday=true" >> $GITHUB_OUTPUT
+            echo "⛔ 祝日のためスキップ: $JST_DATE"
+          else
+            echo "is_holiday=false" >> $GITHUB_OUTPUT
+            echo "✅ 営業日: $JST_DATE"
+          fi
+
+  run:
+    needs: check-holiday
+    if: needs.check-holiday.outputs.is_holiday != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Email triage 1900 を実行
+        uses: anthropic-ai/claude-code-action@v1
+        with:
+          prompt: |
+            夕方のメールトリアージを実行してください。
+            1. 昼〜夕方までの未読メールを確認し、重要度・緊急度で分類する
+            2. 要対応のメールにラベルを付ける
+            3. スパム・不要メールをアーカイブする
+            4. トリアージ結果をサマリーとして Slack で水越 淳太（<@U06C8ND1ERE>）に DM 送信する
+               - チャンネル指定は "U06C8ND1ERE"（ユーザーID）を使うこと
+               - メッセージ冒頭に <@U06C8ND1ERE> のメンションを含めること
+               - 件名・緊急度・要対応件数・スキップ件数を箇条書きで伝えること
+          allowed_tools: "mcp__gmail__*, mcp__Slack__slack_send_message"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
