@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #111;
+  background: var(--surface-ink);
 }
 
 .center {
@@ -10,12 +10,12 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  color: #666;
+  color: var(--text-faint);
 }
 
 .topBar {
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--ink-200);
   padding: 0 16px;
   height: 52px;
   display: flex;
@@ -26,7 +26,7 @@
 
 .back {
   font-size: 13px;
-  color: #555;
+  color: var(--text-muted);
   background: none;
   border: none;
   cursor: pointer;
@@ -34,7 +34,7 @@
   padding: 4px 0;
 }
 
-.back:hover { color: #111; }
+.back:hover { color: var(--text-strong); }
 
 .docMeta {
   display: flex;
@@ -46,8 +46,8 @@
 
 .docTitle {
   font-size: 15px;
-  font-weight: 600;
-  color: #111;
+  font-weight: 700;
+  color: var(--text-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -56,21 +56,21 @@
 .categoryBadge {
   font-size: 11px;
   padding: 2px 8px;
-  background: #f3f4f6;
-  color: #555;
-  border-radius: 4px;
+  background: var(--surface-3);
+  color: var(--text-muted);
+  border-radius: var(--radius-xs);
   white-space: nowrap;
 }
 
 .visibilityBadge {
   font-size: 11px;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   white-space: nowrap;
 }
 
-.badgePrivate { background: #f3f4f6; color: #6b7280; }
-.badgePublic { background: #dbeafe; color: #1d4ed8; }
+.badgePrivate { background: var(--surface-3); color: var(--text-muted); }
+.badgePublic { background: rgba(230, 47, 154, 0.12); color: var(--sf-magenta); }
 
 .actions {
   display: flex;
@@ -88,38 +88,40 @@
   height: 100%;
   border: none;
   display: block;
-  background: #fff;
+  background: var(--surface-1);
 }
 
 /* Buttons */
 .btnPrimary {
-  padding: 6px 14px;
-  background: #1d4ed8;
-  color: #fff;
+  padding: 7px 16px;
+  background: var(--gradient-brand);
+  color: var(--text-on-accent);
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-pill);
   font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--glow-brand);
 }
-.btnPrimary:hover { background: #1e40af; }
+.btnPrimary:hover { filter: brightness(1.05); }
 
 .btnSecondary {
-  padding: 6px 14px;
-  background: #fff;
-  color: #555;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  padding: 7px 16px;
+  background: var(--surface-1);
+  color: var(--text-muted);
+  border: 1px solid var(--ink-200);
+  border-radius: var(--radius-pill);
   font-size: 13px;
   cursor: pointer;
 }
-.btnSecondary:hover { background: #f5f5f5; }
+.btnSecondary:hover { background: var(--surface-3); }
 
 .btnDanger {
-  padding: 6px 14px;
-  background: #fff;
-  color: #dc2626;
-  border: 1px solid #fca5a5;
-  border-radius: 5px;
+  padding: 7px 16px;
+  background: var(--surface-1);
+  color: var(--danger);
+  border: 1px solid #f3b7b3;
+  border-radius: var(--radius-pill);
   font-size: 13px;
   cursor: pointer;
 }
@@ -129,7 +131,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(14, 14, 16, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,23 +139,24 @@
 }
 
 .dialog {
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
   padding: 28px;
   max-width: 420px;
   width: 90%;
+  box-shadow: var(--shadow-lg);
 }
 
 .dialogTitle {
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0 0 10px;
-  color: #111;
+  color: var(--text-strong);
 }
 
 .dialogBody {
   font-size: 14px;
-  color: #555;
+  color: var(--text-muted);
   margin: 0 0 24px;
   line-height: 1.6;
 }

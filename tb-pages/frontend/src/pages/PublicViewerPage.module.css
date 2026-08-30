@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  color: #aaa;
+  color: var(--text-faint);
   font-size: 15px;
 }
 
@@ -19,7 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fafafa;
+  background: var(--surface-2);
 }
 
 .notFoundInner {
@@ -29,41 +29,43 @@
 
 .notFoundCode {
   font-size: 72px;
-  font-weight: 700;
-  color: #e5e7eb;
+  font-weight: 900;
+  color: var(--ink-200);
   margin: 0 0 8px;
   line-height: 1;
 }
 
 .notFoundTitle {
   font-size: 22px;
-  font-weight: 600;
-  color: #111;
+  font-weight: 700;
+  color: var(--text-strong);
   margin: 0 0 12px;
 }
 
 .notFoundDesc {
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--text-faint);
   margin: 0 0 28px;
 }
 
 .notFoundBtn {
-  padding: 10px 24px;
-  background: #1d4ed8;
-  color: #fff;
+  padding: 10px 28px;
+  background: var(--gradient-brand);
+  color: var(--text-on-accent);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--glow-brand);
 }
 
-.notFoundBtn:hover { background: #1e40af; }
+.notFoundBtn:hover { filter: brightness(1.05); }
 
 /* Top bar */
 .topBar {
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--ink-200);
   padding: 0 20px;
   height: 52px;
   display: flex;
@@ -74,7 +76,7 @@
 
 .back {
   font-size: 13px;
-  color: #555;
+  color: var(--text-muted);
   background: none;
   border: none;
   cursor: pointer;
@@ -82,7 +84,7 @@
   padding: 4px 0;
 }
 
-.back:hover { color: #1d4ed8; }
+.back:hover { color: var(--sf-magenta); }
 
 .meta {
   display: flex;
@@ -93,8 +95,8 @@
 
 .title {
   font-size: 15px;
-  font-weight: 600;
-  color: #111;
+  font-weight: 700;
+  color: var(--text-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -103,9 +105,9 @@
 .categoryBadge {
   font-size: 11px;
   padding: 2px 8px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-radius: 4px;
+  background: rgba(230, 47, 154, 0.12);
+  color: var(--sf-magenta);
+  border-radius: var(--radius-xs);
   white-space: nowrap;
 }
 
@@ -120,5 +122,5 @@
   height: 100%;
   border: none;
   display: block;
-  background: #fff;
+  background: var(--surface-1);
 }
