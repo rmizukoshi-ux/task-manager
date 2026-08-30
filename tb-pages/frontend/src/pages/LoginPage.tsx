@@ -24,8 +24,9 @@ export function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
+        <p className={styles.eyebrow}>DOCUMENT PORTAL</p>
         <h1 className={styles.title}>T&amp;B Pages</h1>
-        <p className={styles.subtitle}>社内資料管理システム</p>
+        <p className={styles.subtitle}>社内資料の管理・共有ポータル</p>
         {error && (
           <p className={styles.error}>
             {ERROR_MESSAGES[error] ?? 'エラーが発生しました'}
