@@ -106,6 +106,73 @@ docs.post('/', requireRole('ADMIN', 'UPLOADER'), async (c) => {
   return c.json({ id, title, category }, 201)
 })
 
+// GET /api/documents/:id/download
+docs.get('/:id/download', async (c) => {
+  const { id } = c.req.param()
+  const doc = await c.env.DB.prepare(
+    'SELECT title, r2_key FROM documents WHERE id = ?'
+  ).bind(id).first<{ title: string; r2_key: string }>()
+
+  if (!doc) return c.json({ error: 'Not Found' }, 404)
+
+  const object = await c.env.STORAGE.get(doc.r2_key)
+  if (!object) return c.json({ error: 'File not found' }, 404)
+
+  const filename = encodeURIComponent(`${doc.title}.html`)
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Disposition': `attachment; filename*=UTF-8''${filename}`,
+      'Access-Control-Allow-Origin': c.req.header('Origin') ?? '*',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+  })
+})
+
+// PUT /api/documents/:id/file
+docs.put('/:id/file', requireRole('ADMIN', 'UPLOADER'), async (c) => {
+  const { id } = c.req.param()
+  const user = c.get('user')
+
+  const doc = await c.env.DB.prepare(
+    'SELECT id, r2_key, uploaded_by FROM documents WHERE id = ?'
+  ).bind(id).first<{ id: string; r2_key: string; uploaded_by: string }>()
+  if (!doc) return c.json({ error: 'Not Found' }, 404)
+
+  if (user.role !== 'ADMIN' && doc.uploaded_by !== user.sub) {
+    return c.json({ error: 'Forbidden' }, 403)
+  }
+
+  let formData: FormData
+  try {
+    formData = await c.req.formData()
+  } catch {
+    return c.json({ error: 'multipart/form-dataで送信してください' }, 400)
+  }
+
+  const file = formData.get('file') as File | null
+  if (!file) return c.json({ error: 'ファイルは必須です' }, 400)
+
+  const name = file.name.toLowerCase()
+  if (!name.endsWith('.html') && !name.endsWith('.htm')) {
+    return c.json({ error: 'HTMLファイル（.html）のみアップロードできます' }, 400)
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return c.json({ error: 'ファイルサイズは10MB以内にしてください' }, 400)
+  }
+
+  const content = await file.arrayBuffer()
+  const now = new Date().toISOString()
+
+  await c.env.STORAGE.put(doc.r2_key, content, {
+    httpMetadata: { contentType: 'text/html; charset=utf-8' },
+  })
+  await c.env.DB.prepare('UPDATE documents SET updated_at = ? WHERE id = ?')
+    .bind(now, id).run()
+
+  return c.json({ ok: true })
+})
+
 // GET /api/documents/:id
 docs.get('/:id', async (c) => {
   const { id } = c.req.param()

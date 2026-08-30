@@ -64,6 +64,19 @@ export function ViewerPage() {
     setShowPublicConfirm(false)
   }
 
+  const handleDownload = async () => {
+    if (!id || !doc) return
+    const res = await authFetch(`/api/documents/${id}/download`)
+    if (!res.ok) return
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${doc.title}.html`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const handleDelete = async () => {
     if (!id) return
     const res = await authFetch(`/api/documents/${id}`, { method: 'DELETE' })
@@ -95,6 +108,9 @@ export function ViewerPage() {
                 {doc.is_public ? '社内限定に戻す' : '外部公開する'}
               </button>
             )}
+            <button className={styles.btnSecondary} onClick={handleDownload}>
+              ダウンロード
+            </button>
             <button className={styles.btnSecondary} onClick={() => navigate(`/edit/${id}`)}>
               編集
             </button>
