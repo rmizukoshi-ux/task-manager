@@ -1,0 +1,60 @@
+/* Design tokens — Sports Force Tech & Boost design system */
+:root {
+  /* Ink scale */
+  --ink-50:  #F5F5F7;
+  --ink-100: #ECECEF;
+  --ink-200: #DDDDE2;
+  --ink-300: #B7B7BE;
+  --ink-400: #8A8A93;
+  --ink-500: #5C5C66;
+  --ink-700: #33333A;
+  --ink-800: #1C1C20;
+  --ink-900: #0E0E10;
+
+  /* Surfaces */
+  --surface-1: #FFFFFF;
+  --surface-2: #F7F7F9;
+  --surface-3: #EFEFF2;
+  --surface-ink: #141418;
+
+  /* Brand */
+  --sf-blue:    #0A33FF;
+  --sf-violet:  #8330C7;
+  --sf-magenta: #E62F9A;
+  --sf-rose:    #FF2C61;
+  --sf-red:     #FF2E0D;
+  --gradient-brand: linear-gradient(90deg, #0A33FF 0%, #8330C7 34%, #E62F9A 58%, #FF2C61 78%, #FF2E0D 100%);
+  --glow-brand: 0 12px 34px rgba(230, 47, 154, 0.34), 0 4px 12px rgba(10, 51, 255, 0.18);
+
+  /* Text */
+  --text-strong: var(--ink-900);
+  --text-body:   var(--ink-700);
+  --text-muted:  var(--ink-500);
+  --text-faint:  var(--ink-400);
+  --text-on-accent: #FFFFFF;
+
+  /* Semantic */
+  --danger: #E5342B;
+
+  /* Radius */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* Shadow */
+  --shadow-xs: 0 1px 2px rgba(14, 14, 16, 0.06);
+  --shadow-sm: 0 2px 8px rgba(14, 14, 16, 0.06);
+  --shadow-md: 0 8px 24px rgba(14, 14, 16, 0.08);
+  --shadow-lg: 0 16px 48px rgba(14, 14, 16, 0.10);
+
+  /* Motion */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Type */
+  --font-jp: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+}

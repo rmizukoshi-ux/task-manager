@@ -1,0 +1,33 @@
+name = "tb-pages-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tb-pages-db"
+database_id = "886bbba5-61e3-4741-bd47-990ff75a5938"
+
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "tb-pages-storage"
+
+[vars]
+ENVIRONMENT = "production"
+ALLOWED_DOMAIN = "a-cial.com"
+FRONTEND_URL = "https://tb-pages-frontend.pages.dev"
+
+# Secrets (set via `wrangler secret put` or Cloudflare dashboard):
+# - GOOGLE_CLIENT_ID
+# - GOOGLE_CLIENT_SECRET
+# - JWT_SECRET
+# - ADMIN_EMAILS       (comma-separated)
+# - UPLOADER_EMAILS    (comma-separated)
+
+# [[routes]]
+# pattern = "tb-pages.a-cial.com/api/*"
+# zone_name = "a-cial.com"
+
+[dev]
+port = 8787
+local_protocol = "http"

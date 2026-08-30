@@ -1,0 +1,24 @@
+name = "tb-pages-sandbox"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "tb-pages-storage"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tb-pages-db"
+database_id = "886bbba5-61e3-4741-bd47-990ff75a5938"
+
+# Secrets:
+# - JWT_SECRET
+
+# [[routes]]
+# pattern = "sandbox.a-cial.com/view/*"
+# zone_name = "a-cial.com"
+
+[dev]
+port = 8788
+local_protocol = "http"

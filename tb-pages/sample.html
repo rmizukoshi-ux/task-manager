@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アーシャルデザイン 会社説明資料</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f8f9fa; color: #333; }
+
+    .slide {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+    }
+
+    .slide-1 {
+      background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+      color: white;
+    }
+
+    .slide-2 { background: #fff; }
+    .slide-3 { background: #f0f4ff; }
+    .slide-4 { background: #fff; }
+    .slide-5 {
+      background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+      color: white;
+    }
+
+    .tag {
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.7;
+      margin-bottom: 16px;
+    }
+
+    h1 { font-size: 48px; font-weight: 700; margin-bottom: 20px; line-height: 1.2; }
+    h2 { font-size: 36px; font-weight: 700; margin-bottom: 32px; color: #1d4ed8; }
+    h3 { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+    p { font-size: 18px; line-height: 1.8; opacity: 0.85; max-width: 640px; text-align: center; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 900px;
+      width: 100%;
+      margin-top: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .icon { font-size: 36px; margin-bottom: 12px; }
+
+    .number {
+      font-size: 56px;
+      font-weight: 700;
+      color: #1d4ed8;
+      margin-bottom: 8px;
+    }
+
+    .label { font-size: 14px; color: #888; }
+
+    .divider {
+      width: 60px;
+      height: 4px;
+      background: #3b82f6;
+      border-radius: 2px;
+      margin: 0 auto 32px;
+    }
+
+    .list {
+      list-style: none;
+      max-width: 600px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .list li {
+      padding: 14px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 17px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .check { color: #1d4ed8; font-size: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- スライド1: タイトル -->
+  <div class="slide slide-1">
+    <div class="tag">Company Profile 2024</div>
+    <h1>アーシャルデザイン</h1>
+    <p>ITを活用して中小企業の成長を支援する<br>テクノロジーパートナー</p>
+  </div>
+
+  <!-- スライド2: 数字で見る会社 -->
+  <div class="slide slide-2">
+    <h2>数字で見るアーシャルデザイン</h2>
+    <div class="divider"></div>
+    <div class="grid">
+      <div class="card">
+        <div class="icon">🏢</div>
+        <div class="number">2015</div>
+        <div class="label">設立年</div>
+      </div>
+      <div class="card">
+        <div class="icon">👥</div>
+        <div class="number">30+</div>
+        <div class="label">社員数</div>
+      </div>
+      <div class="card">
+        <div class="icon">🤝</div>
+        <div class="number">200+</div>
+        <div class="label">支援企業数</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- スライド3: 事業内容 -->
+  <div class="slide slide-3">
+    <h2>事業内容</h2>
+    <div class="divider"></div>
+    <div class="grid">
+      <div class="card">
+        <div class="icon">💻</div>
+        <h3>DX推進支援</h3>
+        <p style="font-size:14px; text-align:left;">業務のデジタル化・自動化を通じて生産性向上を実現します。</p>
+      </div>
+      <div class="card">
+        <div class="icon">📊</div>
+        <h3>データ活用</h3>
+        <p style="font-size:14px; text-align:left;">データ分析基盤の構築から活用まで一貫してサポートします。</p>
+      </div>
+      <div class="card">
+        <div class="icon">🎨</div>
+        <h3>UI/UXデザイン</h3>
+        <p style="font-size:14px; text-align:left;">使いやすいプロダクトで顧客体験の向上を支援します。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- スライド4: 特徴 -->
+  <div class="slide slide-4">
+    <h2>選ばれる理由</h2>
+    <div class="divider"></div>
+    <ul class="list">
+      <li><span class="check">✓</span> 導入から運用まで伴走型でサポート</li>
+      <li><span class="check">✓</span> 中小企業に特化したコストパフォーマンス</li>
+      <li><span class="check">✓</span> 最新技術を活用したスピーディーな開発</li>
+      <li><span class="check">✓</span> 豊富な業種・業態での支援実績</li>
+      <li><span class="check">✓</span> 専任担当者による手厚いアフターサポート</li>
+    </ul>
+  </div>
+
+  <!-- スライド5: CTA -->
+  <div class="slide slide-5">
+    <div class="tag">Contact Us</div>
+    <h1 style="font-size:36px;">まずはお気軽にご相談ください</h1>
+    <p>初回相談は無料です。貴社の課題をお聞かせください。</p>
+  </div>
+
+</body>
+</html>

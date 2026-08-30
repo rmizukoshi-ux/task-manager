@@ -1,0 +1,176 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--surface-ink);
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: var(--text-faint);
+}
+
+.topBar {
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--ink-200);
+  padding: 0 16px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.back {
+  font-size: 13px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 4px 0;
+}
+
+.back:hover { color: var(--text-strong); }
+
+.docMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.docTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.categoryBadge {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--surface-3);
+  color: var(--text-muted);
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+.visibilityBadge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+.badgePrivate { background: var(--surface-3); color: var(--text-muted); }
+.badgePublic { background: rgba(230, 47, 154, 0.12); color: var(--sf-magenta); }
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.iframeContainer {
+  flex: 1;
+  overflow: hidden;
+}
+
+.iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  background: var(--surface-1);
+}
+
+/* Buttons */
+.btnPrimary {
+  padding: 7px 16px;
+  background: var(--gradient-brand);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--glow-brand);
+}
+.btnPrimary:hover { filter: brightness(1.05); }
+
+.btnSecondary {
+  padding: 7px 16px;
+  background: var(--surface-1);
+  color: var(--text-muted);
+  border: 1px solid var(--ink-200);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  cursor: pointer;
+}
+.btnSecondary:hover { background: var(--surface-3); }
+
+.btnDanger {
+  padding: 7px 16px;
+  background: var(--surface-1);
+  color: var(--danger);
+  border: 1px solid #f3b7b3;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  cursor: pointer;
+}
+.btnDanger:hover { background: #fef2f2; }
+
+/* Dialog */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 14, 16, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.dialog {
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: var(--shadow-lg);
+}
+
+.dialogTitle {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--text-strong);
+}
+
+.dialogBody {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+
+.dialogActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .topBar { padding: 0 12px; height: auto; min-height: 52px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; gap: 8px; }
+  .actions { flex-wrap: wrap; gap: 6px; }
+  .back { font-size: 12px; }
+  .docTitle { font-size: 13px; }
+}
